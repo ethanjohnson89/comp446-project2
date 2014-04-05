@@ -93,9 +93,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Box.h" />
-    <ClInclude Include="..\..\Common\d3dUtil.h" />
     <ClInclude Include="constants.h" />
     <ClInclude Include="d3dApp.h" />
+    <ClInclude Include="d3dUtil.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="GameTimer.h" />
     <ClInclude Include="Layer.h" />
