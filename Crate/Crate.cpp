@@ -14,6 +14,7 @@
 #include "Box.h"
 #include "GameObject.h"
 #include "Layer.h"
+#include <sstream>
 
 class CrateApp : public D3DApp
 {
@@ -38,6 +39,7 @@ private:
 
 	GameObject layer1[3];
 	GameObject layer2[3];
+	GameObject laser;
 	//Layer layers[3];
 	Layer layer;
 
@@ -70,8 +72,13 @@ private:
 	float mRadius;
 	float mTheta;
 	float mPhi;
+
+	float laserTheta;
+	float laserPhi;
 	
 	float spinAmount;
+
+	std::wstring stats;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
@@ -100,6 +107,9 @@ CrateApp::CrateApp(HINSTANCE hInstance)
 	D3DXMatrixIdentity(&mView);
 	D3DXMatrixIdentity(&mProj);
 	D3DXMatrixIdentity(&mWVP); 
+
+	laserTheta = mTheta;
+	laserPhi = mPhi;
 }
 
 CrateApp::~CrateApp()
@@ -140,6 +150,7 @@ void CrateApp::initApp()
 	bullet.init(md3dDevice, 1.0f);
 
 	gameObject6.init(&bullet, sqrt(2.0f*1.4), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1);
+	laser.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius);
 
 
 	layer1[0].init(&bullet, sqrt(2.0f), D3DXVECTOR3(3,0,3), D3DXVECTOR3(0,0,0), 10,1);
@@ -206,6 +217,8 @@ void CrateApp::updateScene(float dt)
 		layer2[i].update(dt);
 	}
 
+	laser.update(dt);
+
 	for(int i=0; i<3; i++)
 		bullet1[i].update(dt);
 	
@@ -213,12 +226,22 @@ void CrateApp::updateScene(float dt)
 	if( mPhi < 0.1f )	mPhi = 0.1f;
 	if( mPhi > PI-0.1f)	mPhi = PI-0.1f;
 
+	if( mTheta < 0.01f )	mTheta = 2*PI-.02f;
+	if( mTheta > 2*PI-0.01f)	mTheta = .02f;
+
+	if( laserTheta < 0.01f )	laserTheta = 2*PI-.02f;
+	if( laserTheta > 2*PI-0.01f)	laserTheta = .02f;
+
+	//needed?
+	//if( laserPhi < 0.1f )	laserPhi = 0.1f;
+	//if( laserPhi > PI-0.1f)	laserPhi = PI-0.1f;
+
 	// Convert Spherical to Cartesian coordinates: mPhi measured from +y
 	// and mTheta measured counterclockwise from -z.
 	mEyePos.x =  mRadius*sinf(mPhi)*sinf(mTheta);
 	mEyePos.z = -mRadius*sinf(mPhi)*cosf(mTheta);
 	mEyePos.y =  mRadius*cosf(mPhi);
-
+	
 	// Build the view matrix.
 	D3DXVECTOR3 target(0.0f, 0.0f, 0.0f);
 	D3DXVECTOR3 up(0.0f, 1.0f, 0.0f);
@@ -268,7 +291,6 @@ void CrateApp::drawScene()
 	gameObject6.setMTech(mTech);
 	gameObject6.draw();
 
-
 	Matrix spinY, spinZ;
 	RotateY(&spinY, ToRadian(spinAmount*50));
 	RotateZ(&spinZ, ToRadian(spinAmount*50));
@@ -294,11 +316,38 @@ void CrateApp::drawScene()
 		bullet1[i].setMTech(mTech);
 		bullet1[i].draw();
 	}
+	
+	//laser
+	//TRACKING:
+	if(abs(laserTheta-mTheta)>.01)
+	{
+		//if(laserTheta > mTheta) laserTheta -= .0003f;
+		//else laserTheta += .0003f;
+		if((laserTheta-mTheta > -PI && laserTheta-mTheta < 0) || (laserTheta-mTheta > PI)) laserTheta += .0003f;
+		else laserTheta -= .0003f;
+	}
+	if(abs(laserPhi-mPhi)>.01)
+	{
+		if(laserPhi > mPhi) laserPhi -= .0003f;
+		else laserPhi += .0003f;
+	}
+	Matrix translateOut;
+	Matrix rotatePhi, rotateTheta;
+	RotateX(&rotatePhi, -laserPhi+.5);
+	RotateY(&rotateTheta, -laserTheta);
+	Translate(&translateOut, 0, 0, -mRadius);
+	mWVP = laser.getWorldMatrix() *translateOut * rotatePhi * rotateTheta * mView*mProj;
+	mfxWVPVar->SetMatrix((float*)&mWVP);
+	laser.setMTech(mTech);
+	laser.draw();
 
-
+	std::wostringstream outs;   
+	outs.precision(2);
+	outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n laser phi: " << laserPhi << "\nlaser theta: " << laserTheta;
+	stats = outs.str();
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 	RECT R = {5, 5, 0, 0};
-	mFont->DrawText(0, mFrameStats.c_str(), -1, &R, DT_NOCLIP, BLACK);
+	mFont->DrawText(0, stats.c_str(), -1, &R, DT_NOCLIP, BLACK);
 
 	mSwapChain->Present(0, 0);
 }
