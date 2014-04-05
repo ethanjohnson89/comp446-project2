@@ -150,7 +150,7 @@ void CrateApp::initApp()
 	bullet.init(md3dDevice, 1.0f);
 
 	gameObject6.init(&bullet, sqrt(2.0f*1.4), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1);
-	laser.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius);
+	laser.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2);
 
 
 	layer1[0].init(&bullet, sqrt(2.0f), D3DXVECTOR3(3,0,3), D3DXVECTOR3(0,0,0), 10,1);
@@ -232,9 +232,6 @@ void CrateApp::updateScene(float dt)
 	if( laserTheta < 0.01f )	laserTheta = 2*PI-.02f;
 	if( laserTheta > 2*PI-0.01f)	laserTheta = .02f;
 
-	//needed?
-	//if( laserPhi < 0.1f )	laserPhi = 0.1f;
-	//if( laserPhi > PI-0.1f)	laserPhi = PI-0.1f;
 
 	// Convert Spherical to Cartesian coordinates: mPhi measured from +y
 	// and mTheta measured counterclockwise from -z.
@@ -291,6 +288,8 @@ void CrateApp::drawScene()
 	gameObject6.setMTech(mTech);
 	gameObject6.draw();
 
+
+	//LAYERS
 	Matrix spinY, spinZ;
 	RotateY(&spinY, ToRadian(spinAmount*50));
 	RotateZ(&spinZ, ToRadian(spinAmount*50));
@@ -321,21 +320,19 @@ void CrateApp::drawScene()
 	//TRACKING:
 	if(abs(laserTheta-mTheta)>.01)
 	{
-		//if(laserTheta > mTheta) laserTheta -= .0003f;
-		//else laserTheta += .0003f;
-		if((laserTheta-mTheta > -PI && laserTheta-mTheta < 0) || (laserTheta-mTheta > PI)) laserTheta += .0003f;
-		else laserTheta -= .0003f;
+		if((laserTheta-mTheta > -PI && laserTheta-mTheta < 0) || (laserTheta-mTheta > PI)) laserTheta += .0007f;
+		else laserTheta -= .0007f;
 	}
 	if(abs(laserPhi-mPhi)>.01)
 	{
-		if(laserPhi > mPhi) laserPhi -= .0003f;
-		else laserPhi += .0003f;
+		if(laserPhi > mPhi) laserPhi -= .0007f;
+		else laserPhi += .0007f;
 	}
 	Matrix translateOut;
 	Matrix rotatePhi, rotateTheta;
-	RotateX(&rotatePhi, -laserPhi+.5);
+	RotateX(&rotatePhi, -laserPhi+PI/2);
 	RotateY(&rotateTheta, -laserTheta);
-	Translate(&translateOut, 0, 0, -mRadius);
+	Translate(&translateOut, 0, 0, -mRadius*2);
 	mWVP = laser.getWorldMatrix() *translateOut * rotatePhi * rotateTheta * mView*mProj;
 	mfxWVPVar->SetMatrix((float*)&mWVP);
 	laser.setMTech(mTech);
