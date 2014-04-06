@@ -118,7 +118,7 @@ void GameObject::update(float dt)
 
 bool GameObject::collided(GameObject *gameObject)
 {
-	if(!gameObject->getActiveState()) return false; //no need to calculate if inactive
+	if(!gameObject->getActiveState() || !active) return false; //no need to calculate if inactive
 
 	Vector3 diff = position - gameObject->getPosition();
 	float length = D3DXVec3LengthSq(&diff);

@@ -82,6 +82,8 @@ private:
 
 	bool fireLaser;
 	float laserTimer;
+
+	int bossHealth;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
@@ -104,7 +106,7 @@ CrateApp::CrateApp(HINSTANCE hInstance)
 : D3DApp(hInstance), mFX(0), mTech(0), mfxWVPVar(0), mfxWorldVar(0), mfxEyePosVar(0),
   mfxLightVar(0), mfxDiffuseMapVar(0), mfxSpecMapVar(0), mfxTexMtxVar(0), 
   mVertexLayout(0), mDiffuseMapRV(0), mSpecMapRV(0), mEyePos(0.0f, 0.0f, 0.0f), 
-  mRadius(25.0f), mTheta(0.0f), mPhi(PI*0.4f), spinAmount(0), fireLaser(false), laserTimer(0)
+  mRadius(25.0f), mTheta(0.0f), mPhi(PI*0.4f), spinAmount(0), fireLaser(false), laserTimer(0), bossHealth(3)
 {
 	D3DXMatrixIdentity(&mCrateWorld);
 	D3DXMatrixIdentity(&mView);
@@ -229,7 +231,8 @@ void CrateApp::updateScene(float dt)
 	//BULLET COLLISION ON BOSS
 	if(gameObject6.collided(&bullet1[0]))
 	{
-		gameObject6.setInActive();
+		bossHealth--;
+		if(bossHealth == 0) gameObject6.setInActive();
 		for(int i=0; i<3; i++)
 			bullet1[i].setInActive();
 	}
@@ -317,7 +320,7 @@ void CrateApp::drawScene()
     {
         mTech->GetPassByIndex( p )->Apply(0);
         
-		mCrateMesh.draw();
+		//mCrateMesh.draw();
     }
 
 	//BOSS
