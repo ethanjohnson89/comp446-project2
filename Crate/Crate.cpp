@@ -79,6 +79,9 @@ private:
 	float spinAmount;
 
 	std::wstring stats;
+
+	bool fireLaser;
+	float laserTimer;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
@@ -101,7 +104,7 @@ CrateApp::CrateApp(HINSTANCE hInstance)
 : D3DApp(hInstance), mFX(0), mTech(0), mfxWVPVar(0), mfxWorldVar(0), mfxEyePosVar(0),
   mfxLightVar(0), mfxDiffuseMapVar(0), mfxSpecMapVar(0), mfxTexMtxVar(0), 
   mVertexLayout(0), mDiffuseMapRV(0), mSpecMapRV(0), mEyePos(0.0f, 0.0f, 0.0f), 
-  mRadius(25.0f), mTheta(0.0f), mPhi(PI*0.4f), spinAmount(0)
+  mRadius(25.0f), mTheta(0.0f), mPhi(PI*0.4f), spinAmount(0), fireLaser(false), laserTimer(0)
 {
 	D3DXMatrixIdentity(&mCrateWorld);
 	D3DXMatrixIdentity(&mView);
@@ -149,7 +152,7 @@ void CrateApp::initApp()
 
 	bullet.init(md3dDevice, 1.0f);
 
-	gameObject6.init(&bullet, sqrt(2.0f*1.4), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1);
+	gameObject6.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1);
 	laser.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2);
 
 
@@ -161,9 +164,9 @@ void CrateApp::initApp()
 	layer2[1].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,5,0), D3DXVECTOR3(0,0,0), 10,1);
 	layer2[2].init(&bullet, sqrt(2.0f), D3DXVECTOR3(-2,-4, 0), D3DXVECTOR3(0,0,0), 10,1);
 
-	bullet1[0].init(&bullet, sqrt(2.0f), D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.5,.05,.05);
-	bullet1[1].init(&bullet, sqrt(2.0f), D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.05,.5,.05);
-	bullet1[2].init(&bullet, sqrt(2.0f), D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.05,.05,.5);
+	bullet1[0].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.5,.05,.05);
+	bullet1[1].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.05,.5,.05);
+	bullet1[2].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.05,.05,.5);
 	
 	for(int i=0; i<3; i++)
 		bullet1[i].setInActive();
@@ -217,10 +220,45 @@ void CrateApp::updateScene(float dt)
 		layer2[i].update(dt);
 	}
 
-	laser.update(dt);
+	
+	
 
 	for(int i=0; i<3; i++)
 		bullet1[i].update(dt);
+
+	//BULLET COLLISION ON BOSS
+	if(gameObject6.collided(&bullet1[0]))
+	{
+		gameObject6.setInActive();
+		for(int i=0; i<3; i++)
+			bullet1[i].setInActive();
+	}
+	gameObject6.update(dt);
+
+
+	//CONTROLS WHEN LASER DISPLAYS
+	if(!fireLaser)
+	{
+		if(rand()%4000==0)
+		{
+			fireLaser = true;
+			laser.setActive();
+		}
+	}
+	else
+	{
+		laser.update(dt);
+		laserTimer += dt;
+		//at end of timer,set timer back to zero, set laser inactive
+		if(laserTimer > 4)
+		{
+			fireLaser = false;
+			laserTimer = 0;
+			laser.setInActive();
+		}
+	}
+
+
 	
 	// Restrict the angle mPhi.
 	if( mPhi < 0.1f )	mPhi = 0.1f;
@@ -340,7 +378,7 @@ void CrateApp::drawScene()
 
 	std::wostringstream outs;   
 	outs.precision(2);
-	outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n laser phi: " << laserPhi << "\nlaser theta: " << laserTheta;
+	outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n laser phi: " << laserPhi << "\nlaser theta: " << laserTheta << "\nlaserTimer: " << laserTimer;
 	stats = outs.str();
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 	RECT R = {5, 5, 0, 0};
