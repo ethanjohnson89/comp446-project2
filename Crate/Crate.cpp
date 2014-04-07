@@ -16,7 +16,15 @@
 //#include "Layer.h"
 #include "Bullet.h"
 #include "Layer.h"
+#include "constants.h"
 #include <sstream>
+#include <string>
+#include <vector>
+#include <fstream>
+
+// Utility functions for generating meshes
+std::vector<Vector3> generateSurfrev2D(float degreesY); // generates a x-z cross-sectional "slice" (of specified degrees around the y-axis) of a unit spherical shell (thickness 0.1)
+std::vector<Vector3> generateSurfrev3D(std::vector<Vector3> polygon, float degreesZ);
 
 class CrateApp : public D3DApp
 {
@@ -128,6 +136,15 @@ CrateApp::~CrateApp()
 
 void CrateApp::initApp()
 {
+	// BEGIN DEBUG CODE
+	std::ofstream fout("debug_out.txt");
+
+	std::vector<Vector3> output = generateSurfrev2D(180);
+	for(int i = 0; i < output.size(); i++)
+		fout << "Point " << i << ": x = " << output[i].x << ", y = " << output[i].y << ", z = " << output[i].z << std::endl;
+	fout.close();
+	// END DEBUG CODE
+
 	D3DApp::initApp();
 
 	mClearColor = D3DXCOLOR(0.9f, 0.9f, 0.9f, 1.0f);
@@ -471,4 +488,55 @@ void CrateApp::buildVertexLayouts()
 		PassDesc.IAInputSignatureSize, &mVertexLayout));
 }
 
- 
+std::vector<Vector3> generateSurfrev2D(float degreesY)
+{
+	// Note: the number of points generated will be 2*NUM_SLICES + 2
+	// (once on the inside, once on the outside, and two to cap it off at the end)
+	const int NUM_SLICES = 10;
+
+	std::vector<Vector3> points;
+
+	// Define the "bottom" of the polygon
+	points.push_back(Vector3(1,0,0));
+	points.push_back(Vector3(0.9,0,0));
+	
+	float sliceSize = degreesY / NUM_SLICES;
+	for(float theta = 0.0f; theta < degreesY; theta += sliceSize)
+	{
+		// If this is the last slice, make sure we don't overshoot past the specified # of degrees
+		float thisSlice = (theta + sliceSize > degreesY) ? degreesY - theta : sliceSize;
+
+		// Rotate the "bottom" points by the appropriate number of degrees for this slice
+		Matrix rotMatrix;
+		RotateY(&rotMatrix, ToRadian(theta + thisSlice));
+		Vector3 rotatedOutsidePoint;
+		Vector3 rotatedInsidePoint;
+		TransformCoord(&rotatedOutsidePoint, &points[0], &rotMatrix);
+		TransformCoord(&rotatedInsidePoint, &points[1], &rotMatrix);
+
+		points.push_back(rotatedOutsidePoint);
+		points.push_back(rotatedInsidePoint);
+	}
+
+	// Right now the sphere-slice "starts" at the x-axis and goes around counterclockwise from there.
+	// For easier usage, we want this to be centered at the x-axis.
+	// Hence, we need to rotate it down by degreesY/2.
+	// (This could have been done in one pass above, but it's clearer to follow this way, and this
+	// step is being done "offline" anyway so it's not time-critical. Not that it'd take long anyway...)
+	std::vector<Vector3> centeredPoints;
+	for(int i = 0; i < points.size(); i++)
+	{
+		Matrix rotMatrix;
+		RotateY(&rotMatrix, ToRadian(-degreesY / 2.0f));
+		Vector3 rotatedPoint;
+		centeredPoints.push_back(*TransformCoord(&rotatedPoint, &points[i], &rotMatrix));
+	}
+
+	return centeredPoints;
+}
+
+std::vector<Vector3> generateSurfrev3D(std::vector<Vector3> polygon, float degreesZ)
+{
+	// placeholder
+	return std::vector<Vector3>();
+}

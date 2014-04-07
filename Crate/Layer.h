@@ -1,5 +1,10 @@
+#pragma once
+
 #include "d3dApp.h"
+#include "d3dUtil.h"
+#include "Vertex.h"
 #include "GameObject.h"
+#include "constants.h"
 
 #define NUM_WALLS 16
 #define NUM_LAYERS 5
@@ -13,47 +18,19 @@ struct Layer {
 	Matrix spin, translate, diagonal;
 	GameObject walls[NUM_WALLS];
 	
-	Layer::Layer(rotationAxis a, int r) {radius = r; axis = a;}
+	Layer::Layer(rotationAxis a, int r) : radius(r), axis(a) {}
 	Layer::Layer() {}
 
-	void updateMatrices(float spinAmount)
-	{
-		if(axis==Y)
-		{
-			Translate(&translate,radius,0,0); //CAN PUT SOMETHING LIKE radius*5*spinAmount/36.0f TO HAVE IT GROW IN AND OUT
-			RotateY(&spin, ToRadian(spinAmount*50));
-			for(int i=0; i<NUM_WALLS; i++)
-				RotateY(&rotations[i], i*2*PI/NUM_WALLS);
-		}
-		else if(axis==Z)
-		{
-			Translate(&translate,0,radius,0);
-			RotateZ(&spin, ToRadian(spinAmount*50));
-			for(int i=0; i<NUM_WALLS; i++)
-				RotateZ(&rotations[i], i*2*PI/NUM_WALLS);
-		}
-		else if(axis==X)
-		{
-			Translate(&translate,0,0,radius);
-			RotateX(&spin, ToRadian(spinAmount*50));
-			for(int i=0; i<NUM_WALLS; i++)
-				RotateX(&rotations[i], i*2*PI/NUM_WALLS);
-		}
-		else if(axis==YZ)
-		{
-			Translate(&translate,0,0,radius);
-			RotateX(&spin, ToRadian(spinAmount*50));
-			RotateY(&diagonal, PI/4.0f);
-			for(int i=0; i<NUM_WALLS; i++)
-				RotateX(&rotations[i], i*2*PI/NUM_WALLS);
-		}
-		else if(axis==ZY)
-		{
-			Translate(&translate,0,0,radius);
-			RotateX(&spin, ToRadian(spinAmount*50));
-			RotateY(&diagonal, -PI/4.0f);
-			for(int i=0; i<NUM_WALLS; i++)
-				RotateX(&rotations[i], i*2*PI/NUM_WALLS);
-		}
-	}
+	void init(ID3D10Device* device, float scale);
+	void draw();
+
+	void updateMatrices(float spinAmount);
+
+private:
+	DWORD mNumVertices;
+	DWORD mNumFaces;
+
+	ID3D10Device* md3dDevice;
+	ID3D10Buffer* mVB;
+	ID3D10Buffer* mIB;
 };
