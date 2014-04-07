@@ -13,9 +13,47 @@
 #include "Light.h"
 #include "Box.h"
 #include "GameObject.h"
-#include "Layer.h"
+//#include "Layer.h"
 #include "Bullet.h"
 #include <sstream>
+
+enum rotationAxis { X, Y, Z };
+
+struct Layer {
+	rotationAxis axis;
+	int radius;
+	Matrix rotations[8];
+	Matrix spin, translate;
+	GameObject walls[8];
+	
+	Layer::Layer(rotationAxis a, int r) {radius = r; axis = a;}
+	Layer::Layer() {}
+
+	void updateMatrices(float spinAmount)
+	{
+		if(axis==Y)
+		{
+			Translate(&translate,radius,0,0); //CAN PUT SOMETHING LIKE radius*5*spinAmount/36.0f TO HAVE IT GROW IN AND OUT
+			RotateY(&spin, ToRadian(spinAmount*50));
+			for(int i=0; i<8; i++)
+				RotateY(&rotations[i], i*PI/4.0f);
+		}
+		else if(axis==Z)
+		{
+			Translate(&translate,0,radius,0);
+			RotateZ(&spin, ToRadian(spinAmount*50));
+			for(int i=0; i<8; i++)
+				RotateZ(&rotations[i], i*PI/4.0f);
+		}
+		else if(axis==X)
+		{
+			Translate(&translate,0,0,radius);
+			RotateX(&spin, ToRadian(spinAmount*50));
+			for(int i=0; i<8; i++)
+				RotateX(&rotations[i], i*PI/4.0f);
+		}
+	}
+};
 
 class CrateApp : public D3DApp
 {
@@ -38,16 +76,10 @@ private:
 	Box target1, bullet;
 	GameObject gameObject6;
 
-	GameObject layer1[3];
-	GameObject layer2[3];
 	GameObject laser;
-	//Layer layers[3];
-	Layer layer;
+	Layer layers[3];
 
 	Bullet bulletObject;
-
-	//bullet construct
-	//GameObject bullet1[3];
 
 	Light mParallelLight;
 
@@ -160,14 +192,18 @@ void CrateApp::initApp()
 	gameObject6.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1);
 	laser.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2);
 
-
-	layer1[0].init(&bullet, sqrt(2.0f), D3DXVECTOR3(3,0,3), D3DXVECTOR3(0,0,0), 10,1);
-	layer1[1].init(&bullet, sqrt(2.0f), D3DXVECTOR3(-1,0,-3), D3DXVECTOR3(0,0,0), 10,1);
-	layer1[2].init(&bullet, sqrt(2.0f), D3DXVECTOR3(-3,0,3), D3DXVECTOR3(0,0,0), 10,1);
-
-	layer2[0].init(&bullet, sqrt(2.0f), D3DXVECTOR3(4,-1,0), D3DXVECTOR3(0,0,0), 10,1);
-	layer2[1].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,5,0), D3DXVECTOR3(0,0,0), 10,1);
-	layer2[2].init(&bullet, sqrt(2.0f), D3DXVECTOR3(-2,-4, 0), D3DXVECTOR3(0,0,0), 10,1);
+	//LAYERS:
+	//SPECIFY ROTATION AXIS AND RADIUS IN CONSTRUCTOR
+	layers[0] = Layer(rotationAxis::Y, 5);
+	layers[1] = Layer(rotationAxis::Z, 6);
+	layers[2] = Layer(rotationAxis::X, 7);
+	for(int i=0; i<8; i++)
+	{
+		layers[0].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.1,1,1);
+		layers[1].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1,.1,1);
+		layers[2].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1,1,.1);
+	}
+	
 
 	//bullet1[0].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.5,.05,.05);
 	//bullet1[1].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.05,.5,.05);
@@ -217,12 +253,21 @@ void CrateApp::updateScene(float dt)
 	if (spinAmount*10 > 360)
 		spinAmount = 0;
 
-
-	for(int i =0; i<3; i++)
+	//UPDATE LAYERS:
+	for(int i=0; i<3; i++)
+		layers[i].updateMatrices(spinAmount);
+	for(int i=0; i<3; i++)
 	{
-		layer1[i].update(dt);
-		layer2[i].update(dt);
+		for(int j=0; j<8; j++)
+		{
+			layers[i].walls[j].update(dt);
+			/*if(bulletObject.collided(&layers[i].walls[j]))
+			{
+				layers[i].walls[j].setInActive();
+			}*/
+		}
 	}
+
 
 	//for(int i=0; i<3; i++)
 	//	bullet1[i].update(dt);
@@ -330,33 +375,19 @@ void CrateApp::drawScene()
 	gameObject6.setMTech(mTech);
 	gameObject6.draw();
 
-
-	//LAYERS
-	Matrix spinY, spinZ;
-	RotateY(&spinY, ToRadian(spinAmount*50));
-	RotateZ(&spinZ, ToRadian(spinAmount*50));
-
+	//LAYERS:
 	for(int i=0; i<3; i++)
 	{
-		mWVP = layer1[i].getWorldMatrix()  * spinY *mView*mProj;
-		mfxWVPVar->SetMatrix((float*)&mWVP);
-		layer1[i].setMTech(mTech);
-		layer1[i].draw();
-
-		mWVP = layer2[i].getWorldMatrix()  * spinZ *mView*mProj;
-		mfxWVPVar->SetMatrix((float*)&mWVP);
-		layer2[i].setMTech(mTech);
-		layer2[i].draw();
+		for(int j=0; j<8; j++)
+		{
+			mWVP = layers[i].walls[j].getWorldMatrix() * layers[i].translate  * layers[i].rotations[j] * layers[i].spin *mView*mProj;
+			mfxWVPVar->SetMatrix((float*)&mWVP);
+			layers[i].walls[j].setMTech(mTech);
+			layers[i].walls[j].draw();
+		}
 	}
-
+	
 	//bullet
-	//for(int i=0; i<3; i++)
-	//{
-	//	mWVP = bullet1[i].getWorldMatrix() *mView*mProj;
-	//	mfxWVPVar->SetMatrix((float*)&mWVP);
-	//	bullet1[i].setMTech(mTech);
-	//	bullet1[i].draw();
-	//}
 	bulletObject.setMTech(mTech);
 	bulletObject.draw(mfxWVPVar, mView*mProj);
 	
