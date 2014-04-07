@@ -14,6 +14,7 @@
 #include "Box.h"
 #include "GameObject.h"
 #include "Layer.h"
+#include "Bullet.h"
 #include <sstream>
 
 class CrateApp : public D3DApp
@@ -43,8 +44,10 @@ private:
 	//Layer layers[3];
 	Layer layer;
 
+	Bullet bulletObject;
+
 	//bullet construct
-	GameObject bullet1[3];
+	//GameObject bullet1[3];
 
 	Light mParallelLight;
 
@@ -166,14 +169,12 @@ void CrateApp::initApp()
 	layer2[1].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,5,0), D3DXVECTOR3(0,0,0), 10,1);
 	layer2[2].init(&bullet, sqrt(2.0f), D3DXVECTOR3(-2,-4, 0), D3DXVECTOR3(0,0,0), 10,1);
 
-	bullet1[0].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.5,.05,.05);
-	bullet1[1].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.05,.5,.05);
-	bullet1[2].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.05,.05,.5);
-	
-	for(int i=0; i<3; i++)
-		bullet1[i].setInActive();
-			
-	
+	//bullet1[0].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.5,.05,.05);
+	//bullet1[1].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.05,.5,.05);
+	//bullet1[2].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.05,.05,.5);
+	//for(int i=0; i<3; i++)
+	//	bullet1[i].setInActive();
+	bulletObject.init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10, 1); // initialized as inactive	
 }
 
 void CrateApp::onResize()
@@ -200,15 +201,16 @@ void CrateApp::updateScene(float dt)
 	{
 		//if(!bullet1[0].getActiveState())
 		//{
-			for(int i=0; i<3; i++)
-			{
-				bullet1[i].setActive();
-				bullet1[i].setPosition(mEyePos);
-				//calculate velocity vector
-				Vector3 t(-mEyePos);
-				bullet1[i].setVelocity(t*2);
-			}
+			//for(int i=0; i<3; i++)
+			//{
+			//	bullet1[i].setActive();
+			//	bullet1[i].setPosition(mEyePos);
+			//	//calculate velocity vector
+			//	Vector3 t(-mEyePos);
+			//	bullet1[i].setVelocity(t*2);
+			//}
 	//	}
+		bulletObject.shoot(mEyePos,2*Vector3(-mEyePos));
 	}
 	
 	spinAmount += 1*dt;
@@ -222,19 +224,18 @@ void CrateApp::updateScene(float dt)
 		layer2[i].update(dt);
 	}
 
-	
-	
-
-	for(int i=0; i<3; i++)
-		bullet1[i].update(dt);
+	//for(int i=0; i<3; i++)
+	//	bullet1[i].update(dt);
+	bulletObject.update(dt);
 
 	//BULLET COLLISION ON BOSS
-	if(gameObject6.collided(&bullet1[0]))
+	if(bulletObject.collided(&gameObject6))
 	{
 		bossHealth--;
 		if(bossHealth == 0) gameObject6.setInActive();
-		for(int i=0; i<3; i++)
-			bullet1[i].setInActive();
+		//for(int i=0; i<3; i++)
+		//	bullet1[i].setInActive();
+		bulletObject.setInActive();
 	}
 	gameObject6.update(dt);
 
@@ -349,13 +350,17 @@ void CrateApp::drawScene()
 	}
 
 	//bullet
-	for(int i=0; i<3; i++)
-	{
-		mWVP = bullet1[i].getWorldMatrix() *mView*mProj;
-		mfxWVPVar->SetMatrix((float*)&mWVP);
-		bullet1[i].setMTech(mTech);
-		bullet1[i].draw();
-	}
+	//for(int i=0; i<3; i++)
+	//{
+	//	mWVP = bullet1[i].getWorldMatrix() *mView*mProj;
+	//	mfxWVPVar->SetMatrix((float*)&mWVP);
+	//	bullet1[i].setMTech(mTech);
+	//	bullet1[i].draw();
+	//}
+	mWVP = bulletObject.getWorldMatrix()*mView*mProj;
+	mfxWVPVar->SetMatrix((float*)&mWVP);
+	bulletObject.setMTech(mTech);
+	bulletObject.draw();
 	
 	//laser
 	//TRACKING:

@@ -113,7 +113,6 @@ void GameObject::update(float dt)
 	Scale(&scaleM, scaleX, scaleY, scaleZ);
 	Translate(&transM, position.x, position.y, position.z);
 	world = scaleM * rotXM * rotYM * rotZM * transM;
-
 }
 
 bool GameObject::collided(GameObject *gameObject)
