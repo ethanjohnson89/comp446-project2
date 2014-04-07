@@ -15,5 +15,7 @@
 #define Scale D3DXMatrixScaling
 #define Normalize D3DXVec3Normalize
 
+#define Radius 25
+
 
 #endif

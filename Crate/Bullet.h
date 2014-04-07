@@ -23,7 +23,13 @@ public:
 	void draw(ID3D10EffectMatrixVariable *mfxWVPVar, D3DXMATRIX mViewProj);
 	void update(float dt);
 
-	void shoot(Vector3 pos, Vector3 vel);
+	void shoot(Vector3 pos, Vector3 vel, float mTheta, float mPhi);
+
+	float getPhi() {return phi;}
+	float getTheta() {return theta;}
+	float getDistanceToOrigin() {return distanceToOrigin;}
+
+
 	void setPosition (Vector3 pos) {
 		position = pos;
 		for(int i=0; i<3;i++)
@@ -158,6 +164,8 @@ private:
 	float scaleX, scaleY, scaleZ, scale;
 	ID3D10EffectTechnique* mTech;
 	float rotX, rotY, rotZ;
+
+	float phi, theta, distanceToOrigin;
 
 	//Matrix r;
 

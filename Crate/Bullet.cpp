@@ -16,6 +16,8 @@ Bullet::Bullet()
 	srand(time(0));
 
 	overrideColor = false;
+
+	phi = theta = distanceToOrigin = 0;
 }
 
 Bullet::~Bullet()
@@ -88,7 +90,7 @@ void Bullet::update(float dt)
 	position += velocity*dt;
 	Identity(&world);
 
-	spinAmountY += (dt * spinYSpeed);
+	/*spinAmountY += (dt * spinYSpeed);
 	if (spinAmountY>2*PI)
 		spinAmountY = 0;
 	rotY = spinAmountY;
@@ -99,7 +101,10 @@ void Bullet::update(float dt)
 	spinAmountZ += (dt * spinZSpeed);
 	if (spinAmountZ>2*PI)
 		spinAmountZ = 0;
-	rotZ = spinAmountZ;
+	rotZ = spinAmountZ;*/
+
+	if(active)
+		distanceToOrigin = D3DXVec3Length(&position);
 
 
 	Matrix rotXM, rotYM, rotZM, transM, scaleM;
@@ -111,10 +116,14 @@ void Bullet::update(float dt)
 	world = scaleM * rotXM * rotYM * rotZM * transM;
 }
 
-void Bullet::shoot(Vector3 pos, Vector3 vel) {
+void Bullet::shoot(Vector3 pos, Vector3 vel, float mTheta, float mPhi) {
 	setActive();
 	setPosition(pos);
 	setVelocity(vel);
+
+	theta = mTheta;
+	phi = mPhi;
+	distanceToOrigin = Radius;
 }
 
 bool Bullet::collided(GameObject *gameObject)

@@ -28,8 +28,23 @@ struct Layer {
 	Matrix rotations[NUM_WALLS];
 	Matrix spin, translate, diagonal;
 	GameObject walls[NUM_WALLS];
+	float thetas[NUM_WALLS];
+	float phis[NUM_WALLS];
+	float startingTheta[NUM_WALLS];
+	float startingPhi[NUM_WALLS];
 	
-	Layer::Layer(rotationAxis a, int r) {radius = r; axis = a;}
+	Layer::Layer(rotationAxis a, int r) {
+		radius = r; 
+		axis = a;
+		if(axis==Y)
+		{
+			for(int i=0; i<NUM_WALLS; i++)
+			{
+				startingTheta[i] = i*2*PI/NUM_WALLS - (PI/2); // THAT PI/2 MAKES UP FOR DIFFERENCE IN STARTING THETAS FOR WALLS AND CAMERA
+				startingPhi[i] = PI/2;
+			}
+		}
+	}
 	Layer::Layer() {}
 
 	void updateMatrices(float spinAmount)
@@ -39,7 +54,15 @@ struct Layer {
 			Translate(&translate,radius,0,0); //CAN PUT SOMETHING LIKE radius*5*spinAmount/36.0f TO HAVE IT GROW IN AND OUT
 			RotateY(&spin, ToRadian(spinAmount*50));
 			for(int i=0; i<NUM_WALLS; i++)
+			{
 				RotateY(&rotations[i], i*2*PI/NUM_WALLS);
+				//thetas[i] = 2*PI*spinAmount/(6*36);
+				float t = ToRadian(spinAmount*50) + startingTheta[i];
+				int temp = static_cast<int>(t/(2*PI));
+				thetas[i] = t - static_cast<float>(temp)*(2*PI);
+				phis[i] = startingPhi[i];
+				//if(thetas[i] > 2*PI) thetas[i] = 0;
+			}
 		}
 		else if(axis==Z)
 		{
@@ -254,8 +277,8 @@ void CrateApp::updateScene(float dt)
 	D3DApp::updateScene(dt);
 
 	// Update angles based on input to orbit camera around scene.
-	if(GetAsyncKeyState('A') & 0x8000)	mTheta -= 3.0f*dt;
-	if(GetAsyncKeyState('D') & 0x8000)	mTheta += 3.0f*dt;
+	if(GetAsyncKeyState('A') & 0x8000)	mTheta += 3.0f*dt;
+	if(GetAsyncKeyState('D') & 0x8000)	mTheta -= 3.0f*dt;
 	if(GetAsyncKeyState('W') & 0x8000)	mPhi -= 3.0f*dt;
 	if(GetAsyncKeyState('S') & 0x8000)	mPhi += 3.0f*dt;
 	if(GetAsyncKeyState('Z') & 0x8000)	mRadius -= 15.0f*dt;
@@ -274,7 +297,7 @@ void CrateApp::updateScene(float dt)
 			//	bullet1[i].setVelocity(t*2);
 			//}
 	//	}
-		bulletObject.shoot(mEyePos,2*Vector3(-mEyePos));
+		bulletObject.shoot(mEyePos,2*Vector3(-mEyePos), mTheta, mPhi);
 	}
 	
 	spinAmount += 1*dt;
@@ -314,8 +337,14 @@ void CrateApp::updateScene(float dt)
 
 
 	//BULLET COLLISION ON WALLS
-	//check both radius and angle as in a certain range?
-
+	for(int i=0; i<NUM_WALLS; i++)
+	{
+		if(bulletObject.getActiveState() && (abs(bulletObject.getTheta() - layers[0].thetas[i]) < .3) && (abs(bulletObject.getPhi() - layers[0].phis[i]) < .3) && (abs(bulletObject.getDistanceToOrigin() - layers[0].radius) < .5))
+		{
+			layers[0].walls[i].setInActive();
+			bulletObject.setInActive();
+		}
+	}
 
 
 	//LASER COLLISION ON WALLS
@@ -361,8 +390,8 @@ void CrateApp::updateScene(float dt)
 
 	// Convert Spherical to Cartesian coordinates: mPhi measured from +y
 	// and mTheta measured counterclockwise from -z.
-	mEyePos.x =  mRadius*sinf(mPhi)*sinf(mTheta);
-	mEyePos.z = -mRadius*sinf(mPhi)*cosf(mTheta);
+	mEyePos.x =  mRadius*sinf(mPhi)*sinf(-mTheta);
+	mEyePos.z = -mRadius*sinf(mPhi)*cosf(-mTheta);
 	mEyePos.y =  mRadius*cosf(mPhi);
 	
 	// Build the view matrix.
@@ -418,7 +447,7 @@ void CrateApp::drawScene()
 	RotateY(&s, PI/4);
 
 	//LAYERS:
-	for(int i=0; i<3; i++)
+	for(int i=0; i<1; i++)
 	{
 		for(int j=0; j<NUM_WALLS; j++)
 		{
@@ -428,8 +457,9 @@ void CrateApp::drawScene()
 			layers[i].walls[j].draw();
 		}
 	}
+
 	//FOR DIAGONAL ROTATIONS:
-	for(int i=3; i<NUM_LAYERS; i++)
+	/*for(int i=3; i<NUM_LAYERS; i++)
 	{
 		for(int j=0; j<NUM_WALLS; j++)
 		{
@@ -438,7 +468,7 @@ void CrateApp::drawScene()
 			layers[i].walls[j].setMTech(mTech);
 			layers[i].walls[j].draw();
 		}
-	}
+	}*/
 	
 	//bullet
 	bulletObject.setMTech(mTech);
@@ -468,7 +498,8 @@ void CrateApp::drawScene()
 
 	std::wostringstream outs;   
 	outs.precision(2);
-	outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n laser phi: " << laserPhi << "\nlaser theta: " << laserTheta << "\nlaserTimer: " << laserTimer;
+	//outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n laser phi: " << laserPhi << "\nlaser theta: " << laserTheta << "\nlaserTimer: " << laserTimer;
+	outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n wall1 phi: " << layers[0].phis[3] << "\nwall1 theta: " << layers[0].thetas[3] << "\nspinAmount: " << spinAmount;
 	stats = outs.str();
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 	RECT R = {5, 5, 0, 0};
