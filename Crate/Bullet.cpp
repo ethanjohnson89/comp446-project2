@@ -107,9 +107,9 @@ void Bullet::update(float dt)
 }
 
 void Bullet::shoot(Vector3 pos, Vector3 vel) {
-	active = true;
-	position = pos;	
-	velocity = vel;
+	setActive();
+	setPosition(pos);
+	setVelocity(vel);
 }
 
 bool Bullet::collided(GameObject *gameObject)
