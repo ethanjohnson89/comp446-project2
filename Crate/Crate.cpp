@@ -357,10 +357,8 @@ void CrateApp::drawScene()
 	//	bullet1[i].setMTech(mTech);
 	//	bullet1[i].draw();
 	//}
-	mWVP = bulletObject.getWorldMatrix()*mView*mProj;
-	mfxWVPVar->SetMatrix((float*)&mWVP);
 	bulletObject.setMTech(mTech);
-	bulletObject.draw();
+	bulletObject.draw(mfxWVPVar, mView*mProj);
 	
 	//laser
 	//TRACKING:

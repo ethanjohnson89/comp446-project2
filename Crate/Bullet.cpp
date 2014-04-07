@@ -22,10 +22,15 @@ Bullet::~Bullet()
 {
 }
 
-void Bullet::draw()
+void Bullet::draw(ID3D10EffectMatrixVariable *mfxWVPVar, D3DXMATRIX mViewProj)
 {
 	for(int i=0; i<3; i++)
+	{
+		D3DXMATRIX pieceMatrix = pieces[i].getWorldMatrix() * getWorldMatrix() * mViewProj;
+		mfxWVPVar->SetMatrix((float*)&pieceMatrix);
+		// mTech has already been set for all pieces by Bullet::setMTech()
 		pieces[i].draw();
+	}
 }
 
 

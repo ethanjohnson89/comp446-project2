@@ -20,7 +20,7 @@ public:
 
 	void init(Box *b, float r, Vector3 pos, Vector3 vel, float sp, float sx, float sy, float sz);
 	void init(Box *b, float r, Vector3 pos, Vector3 vel, float sp, float s);
-	void draw();
+	void draw(ID3D10EffectMatrixVariable *mfxWVPVar, D3DXMATRIX mViewProj);
 	void update(float dt);
 
 	void shoot(Vector3 pos, Vector3 vel);
