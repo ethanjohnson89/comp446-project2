@@ -17,14 +17,17 @@
 #include "Bullet.h"
 #include <sstream>
 
-enum rotationAxis { X, Y, Z };
+#define NUM_WALLS 16
+#define NUM_LAYERS 5
+
+enum rotationAxis { X, Y, Z, YZ, ZY };
 
 struct Layer {
 	rotationAxis axis;
 	int radius;
-	Matrix rotations[8];
-	Matrix spin, translate;
-	GameObject walls[8];
+	Matrix rotations[NUM_WALLS];
+	Matrix spin, translate, diagonal;
+	GameObject walls[NUM_WALLS];
 	
 	Layer::Layer(rotationAxis a, int r) {radius = r; axis = a;}
 	Layer::Layer() {}
@@ -35,22 +38,38 @@ struct Layer {
 		{
 			Translate(&translate,radius,0,0); //CAN PUT SOMETHING LIKE radius*5*spinAmount/36.0f TO HAVE IT GROW IN AND OUT
 			RotateY(&spin, ToRadian(spinAmount*50));
-			for(int i=0; i<8; i++)
-				RotateY(&rotations[i], i*PI/4.0f);
+			for(int i=0; i<NUM_WALLS; i++)
+				RotateY(&rotations[i], i*2*PI/NUM_WALLS);
 		}
 		else if(axis==Z)
 		{
 			Translate(&translate,0,radius,0);
 			RotateZ(&spin, ToRadian(spinAmount*50));
-			for(int i=0; i<8; i++)
-				RotateZ(&rotations[i], i*PI/4.0f);
+			for(int i=0; i<NUM_WALLS; i++)
+				RotateZ(&rotations[i], i*2*PI/NUM_WALLS);
 		}
 		else if(axis==X)
 		{
 			Translate(&translate,0,0,radius);
 			RotateX(&spin, ToRadian(spinAmount*50));
-			for(int i=0; i<8; i++)
-				RotateX(&rotations[i], i*PI/4.0f);
+			for(int i=0; i<NUM_WALLS; i++)
+				RotateX(&rotations[i], i*2*PI/NUM_WALLS);
+		}
+		else if(axis==YZ)
+		{
+			Translate(&translate,0,0,radius);
+			RotateX(&spin, ToRadian(spinAmount*50));
+			RotateY(&diagonal, PI/4.0f);
+			for(int i=0; i<NUM_WALLS; i++)
+				RotateX(&rotations[i], i*2*PI/NUM_WALLS);
+		}
+		else if(axis==ZY)
+		{
+			Translate(&translate,0,0,radius);
+			RotateX(&spin, ToRadian(spinAmount*50));
+			RotateY(&diagonal, -PI/4.0f);
+			for(int i=0; i<NUM_WALLS; i++)
+				RotateX(&rotations[i], i*2*PI/NUM_WALLS);
 		}
 	}
 };
@@ -77,7 +96,7 @@ private:
 	GameObject gameObject6;
 
 	GameObject laser;
-	Layer layers[3];
+	Layer layers[NUM_LAYERS];
 
 	Bullet bulletObject;
 
@@ -197,11 +216,20 @@ void CrateApp::initApp()
 	layers[0] = Layer(rotationAxis::Y, 5);
 	layers[1] = Layer(rotationAxis::Z, 6);
 	layers[2] = Layer(rotationAxis::X, 7);
-	for(int i=0; i<8; i++)
+	layers[3] = Layer(rotationAxis::YZ, 4);
+	layers[4] = Layer(rotationAxis::ZY, 8);
+	for(int i=0; i<NUM_WALLS; i++)
 	{
-		layers[0].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.1,1,1);
-		layers[1].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1,.1,1);
-		layers[2].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1,1,.1);
+		layers[0].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.1,1.7,1.7);
+		layers[1].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.7,.1,1.7);
+		layers[2].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.7,1.7,.1);
+		layers[3].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.7,1.7,.1);
+		layers[4].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.7,1.7,.1);
+	/*	layers[0].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.1,1.5,1.5);
+		layers[1].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.5,.1,1.5);
+		layers[2].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.5,1.5,.1);
+		layers[3].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.5,1.5,.1);
+		layers[4].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.5,1.5,.1);*/
 	}
 	
 
@@ -254,11 +282,11 @@ void CrateApp::updateScene(float dt)
 		spinAmount = 0;
 
 	//UPDATE LAYERS:
-	for(int i=0; i<3; i++)
+	for(int i=0; i<NUM_LAYERS; i++)
 		layers[i].updateMatrices(spinAmount);
-	for(int i=0; i<3; i++)
+	for(int i=0; i<NUM_LAYERS; i++)
 	{
-		for(int j=0; j<8; j++)
+		for(int j=0; j<NUM_WALLS; j++)
 		{
 			layers[i].walls[j].update(dt);
 			/*if(bulletObject.collided(&layers[i].walls[j]))
@@ -272,6 +300,7 @@ void CrateApp::updateScene(float dt)
 	//for(int i=0; i<3; i++)
 	//	bullet1[i].update(dt);
 	bulletObject.update(dt);
+	gameObject6.update(dt);
 
 	//BULLET COLLISION ON BOSS
 	if(bulletObject.collided(&gameObject6))
@@ -282,7 +311,17 @@ void CrateApp::updateScene(float dt)
 		//	bullet1[i].setInActive();
 		bulletObject.setInActive();
 	}
-	gameObject6.update(dt);
+
+
+	//BULLET COLLISION ON WALLS
+	//check both radius and angle as in a certain range?
+
+
+
+	//LASER COLLISION ON WALLS
+
+
+	
 
 
 	//CONTROLS WHEN LASER DISPLAYS
@@ -375,12 +414,26 @@ void CrateApp::drawScene()
 	gameObject6.setMTech(mTech);
 	gameObject6.draw();
 
+	Matrix s;
+	RotateY(&s, PI/4);
+
 	//LAYERS:
 	for(int i=0; i<3; i++)
 	{
-		for(int j=0; j<8; j++)
+		for(int j=0; j<NUM_WALLS; j++)
 		{
-			mWVP = layers[i].walls[j].getWorldMatrix() * layers[i].translate  * layers[i].rotations[j] * layers[i].spin *mView*mProj;
+			mWVP = layers[i].walls[j].getWorldMatrix() * layers[i].translate  * layers[i].rotations[j] * layers[i].spin * mView*mProj;
+			mfxWVPVar->SetMatrix((float*)&mWVP);
+			layers[i].walls[j].setMTech(mTech);
+			layers[i].walls[j].draw();
+		}
+	}
+	//FOR DIAGONAL ROTATIONS:
+	for(int i=3; i<NUM_LAYERS; i++)
+	{
+		for(int j=0; j<NUM_WALLS; j++)
+		{
+			mWVP = layers[i].walls[j].getWorldMatrix() * layers[i].translate  * layers[i].rotations[j] * layers[i].spin * layers[i].diagonal * mView*mProj;
 			mfxWVPVar->SetMatrix((float*)&mWVP);
 			layers[i].walls[j].setMTech(mTech);
 			layers[i].walls[j].draw();
@@ -395,13 +448,13 @@ void CrateApp::drawScene()
 	//TRACKING:
 	if(abs(laserTheta-mTheta)>.01)
 	{
-		if((laserTheta-mTheta > -PI && laserTheta-mTheta < 0) || (laserTheta-mTheta > PI)) laserTheta += .0007f;
-		else laserTheta -= .0007f;
+		if((laserTheta-mTheta > -PI && laserTheta-mTheta < 0) || (laserTheta-mTheta > PI)) laserTheta += .0015f;
+		else laserTheta -= .0015f;
 	}
 	if(abs(laserPhi-mPhi)>.01)
 	{
-		if(laserPhi > mPhi) laserPhi -= .0007f;
-		else laserPhi += .0007f;
+		if(laserPhi > mPhi) laserPhi -= .0015f;
+		else laserPhi += .0015f;
 	}
 	Matrix translateOut;
 	Matrix rotatePhi, rotateTheta;
