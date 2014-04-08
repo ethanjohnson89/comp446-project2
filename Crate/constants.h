@@ -16,6 +16,10 @@
 #define Normalize D3DXVec3Normalize
 
 #define Radius 25
+#define REGEN_TIME 2.5
+#define NUM_WALLS 16
+#define NUM_LAYERS 5
+
 
 
 #endif

@@ -13,12 +13,8 @@
 #include "Light.h"
 #include "Box.h"
 #include "GameObject.h"
-//#include "Layer.h"
 #include "Bullet.h"
 #include <sstream>
-
-#define NUM_WALLS 16
-#define NUM_LAYERS 5
 
 enum rotationAxis { X, Y, Z, YZ, ZY };
 
@@ -32,10 +28,14 @@ struct Layer {
 	float phis[NUM_WALLS];
 	float startingTheta[NUM_WALLS];
 	float startingPhi[NUM_WALLS];
+	float regenTime[NUM_WALLS];
 	
 	Layer::Layer(rotationAxis a, int r) {
 		radius = r; 
 		axis = a;
+		for(int i=0; i<NUM_WALLS; i++)
+			regenTime[i] = 0;
+
 		if(axis==Y)
 		{
 			for(int i=0; i<NUM_WALLS; i++)
@@ -158,6 +158,8 @@ public:
 	void onResize();
 	void updateScene(float dt);
 	void drawScene(); 
+
+	void regenerateWalls(float dt);
 
 private:
 	void buildFX();
@@ -428,7 +430,7 @@ void CrateApp::updateScene(float dt)
 	}
 
 	
-
+	regenerateWalls(dt);
 
 	//CONTROLS WHEN LASER DISPLAYS
 	if(!fireLaser)
@@ -475,6 +477,25 @@ void CrateApp::updateScene(float dt)
 	D3DXVECTOR3 target(0.0f, 0.0f, 0.0f);
 	D3DXVECTOR3 up(0.0f, 1.0f, 0.0f);
 	D3DXMatrixLookAtLH(&mView, &mEyePos, &target, &up);
+}
+
+void CrateApp::regenerateWalls(float dt)
+{
+	for(int i=0; i<NUM_LAYERS; i++)
+	{
+		for(int j=0; j<NUM_WALLS; j++)
+		{
+			if(!layers[i].walls[j].getActiveState())
+			{
+				layers[i].regenTime[j] += dt;
+				if(layers[i].regenTime[j] > REGEN_TIME)
+				{
+					layers[i].walls[j].setActive();
+					layers[i].regenTime[j] = 0;
+				}
+			}
+		}
+	}
 }
 
 void CrateApp::drawScene()
