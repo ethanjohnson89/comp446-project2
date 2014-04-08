@@ -216,6 +216,8 @@ private:
 	int bossHealth;
 
 	bool spacePressedLastFrame;
+
+	int level;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
@@ -239,7 +241,7 @@ CrateApp::CrateApp(HINSTANCE hInstance)
   mfxLightVar(0), mfxDiffuseMapVar(0), mfxSpecMapVar(0), mfxTexMtxVar(0), 
   mVertexLayout(0), mDiffuseMapRV(0), mSpecMapRV(0), mEyePos(0.0f, 0.0f, 0.0f), 
   mRadius(25.0f), mTheta(0.0f), mPhi(PI*0.4f), spinAmount(0), fireLaser(false), laserTimer(0), bossHealth(3),
-  spacePressedLastFrame(false)
+  spacePressedLastFrame(false), level(1)
 {
 	D3DXMatrixIdentity(&mCrateWorld);
 	D3DXMatrixIdentity(&mView);
@@ -289,6 +291,7 @@ void CrateApp::initApp()
 
 	gameObject6.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1);
 	laser.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2);
+	laser.setInActive();
 
 	//LAYERS:
 	//SPECIFY ROTATION AXIS AND RADIUS IN CONSTRUCTOR
@@ -367,7 +370,12 @@ void CrateApp::updateScene(float dt)
 
 	//UPDATE LAYERS:
 	for(int i=0; i<3; i++)
-		layers[i].updateMatrices(spinAmount);
+	{
+		//if(level == 1)
+		//	layers[i].updateMatrices(0);
+		//else if(level == 2)
+			layers[i].updateMatrices(spinAmount);
+	}
 	for(int i=0; i<NUM_LAYERS; i++)
 	{
 		for(int j=0; j<NUM_WALLS; j++)
@@ -454,6 +462,7 @@ void CrateApp::updateScene(float dt)
 		{
 			fireLaser = true;
 			laser.setActive();
+			laserTheta = (int)(mTheta+PI)%6;
 		}
 	}
 	else
