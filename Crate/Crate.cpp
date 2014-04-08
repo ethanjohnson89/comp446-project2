@@ -366,7 +366,7 @@ void CrateApp::updateScene(float dt)
 		spinAmount = 0;
 
 	//UPDATE LAYERS:
-	for(int i=0; i<NUM_LAYERS; i++)
+	for(int i=0; i<3; i++)
 		layers[i].updateMatrices(spinAmount);
 	for(int i=0; i<NUM_LAYERS; i++)
 	{
@@ -421,9 +421,24 @@ void CrateApp::updateScene(float dt)
 		{
 			for(int i=0; i<NUM_WALLS; i++)
 			{
-				if(layers[j].walls[i].getActiveState() && (abs(laserTheta - layers[j].thetas[i]) < .3) && (abs(laserPhi - layers[j].phis[i]) < .3))
+				if(layers[j].walls[i].getActiveState())
 				{
-					layers[j].walls[i].setInActive();
+					//if laserTheta is close to either 0 or 2PI, ignore theta comparisons
+					if(laserPhi < .3 || laserPhi > 2.7)
+					{
+						if(abs(laserPhi - layers[j].phis[i]) < .3)
+						{
+							layers[j].walls[i].setInActive();
+						}
+					}
+					else
+					{
+						if((abs(laserTheta - layers[j].thetas[i]) < .3) && (abs(laserPhi - layers[j].phis[i]) < .3))
+						//if(layers[j].walls[i].getActiveState() && ((layers[j].thetas[i] > laserTheta) && (laserTheta + .3 > layers[j].thetas[i])) || ((layers[j].thetas[i] < laserTheta) && (layers[j].thetas[i] + .3 > laserTheta)))
+						{
+							layers[j].walls[i].setInActive();
+						}
+					}
 				}
 			}
 		}
@@ -601,7 +616,8 @@ void CrateApp::drawScene()
 
 	std::wostringstream outs;   
 	outs.precision(2);
-	outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n laser phi: " << laserPhi << "\nlaser theta: " << laserTheta;
+	//outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n laser phi: " << laserPhi << "\nlaser theta: " << laserTheta
+	outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n laser phi: " << laserPhi << "\nlaser theta: " << laserTheta << "\nwall theta: " << layers[2].thetas[5] << "\nwall phi: " << layers[2].phis[5];;
 	stats = outs.str();
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 	RECT R = {5, 5, 0, 0};
