@@ -374,6 +374,7 @@ void CrateApp::reinitialize()
 			//float startingPhi[NUM_WALLS];
 			layers[j].regenTime[i] = 0;
 			layers[j].walls[i].setActive();
+			layers[j].wallHealth[i] = 2;
 		}
 	}
 
@@ -576,9 +577,11 @@ void CrateApp::updateScene(float dt)
 					{
 						if(layers[j].walls[i].getActiveState() && ((abs(bulletObject.getTheta() - layers[j].thetas[i]) < .3) || (abs(bulletObject.getTheta() - 2*PI - layers[j].thetas[i]) < .3)) && (abs(bulletObject.getPhi() - layers[j].phis[i]) < .3) && (abs(bulletObject.getDistanceToOrigin() - layers[j].radius) < .5))
 						{
-							layers[j].walls[i].setInActive();
+							layers[j].wallHealth[i] --;
 							bulletObject.setInActive();
 							audio->playCue(WALLHIT);
+							if(layers[j].wallHealth[i] == 0)
+								layers[j].walls[i].setInActive();
 						}
 					}
 				}
@@ -728,6 +731,7 @@ void CrateApp::regenerateWalls(float dt)
 					{
 						layers[i].walls[j].setActive();
 						layers[i].regenTime[j] = 0;
+						layers[i].wallHealth[j] = 2;
 					}
 				}
 				else if(level==1)
@@ -736,6 +740,7 @@ void CrateApp::regenerateWalls(float dt)
 					{
 						layers[i].walls[j].setActive();
 						layers[i].regenTime[j] = 0;
+						layers[i].wallHealth[j] = 2;
 					}
 				}
 			}

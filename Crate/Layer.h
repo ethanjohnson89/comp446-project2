@@ -22,6 +22,7 @@ struct Layer {
 	float startingTheta[NUM_WALLS];
 	float startingPhi[NUM_WALLS];
 	float regenTime[NUM_WALLS];
+	int wallHealth[NUM_WALLS];
 	
 	Layer::Layer(rotationAxis a, int r);
 	Layer::Layer() {}

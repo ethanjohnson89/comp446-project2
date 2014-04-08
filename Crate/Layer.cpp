@@ -4,7 +4,10 @@ Layer::Layer(rotationAxis a, int r) {
 	radius = r; 
 	axis = a;
 	for(int i=0; i<NUM_WALLS; i++)
+	{
 		regenTime[i] = 0;
+		wallHealth[i] = 2;
+	}
 
 	if(axis==Y)
 	{
