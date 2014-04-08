@@ -20,11 +20,12 @@
 #define VectorCross D3DXVec3Cross
 
 #define Radius 25
-#define REGEN_TIME 2.5
+#define REGEN_TIME 1
 #define REGEN_TIME_LVL1 4
 #define NUM_WALLS 16
 //#define NUM_WALLS_LVL1 10
 #define NUM_LAYERS 5
+#define LASER_SPEED_LVL2 .005
 
 enum State {intro, start, game, end, restart, nextLevel};
 

@@ -197,7 +197,7 @@ void CrateApp::initApp()
 	mesh.init(md3dDevice, 2.0, Vector3(1,0,0), Vector3(0,0,0), 0, 2);
 	mesh.setOverrideColorVar(mfxOverrideColorFlag);
 	mesh.setObjectColorVar(mfxObjectColor);
-	mesh.setColor(D3DXCOLOR(1, 0, 0, 1));
+	mesh.setColor(D3DXCOLOR(0, 1, 0, 1));
 
 	mCrateMesh.init(md3dDevice, 1.0f);
 
@@ -284,6 +284,7 @@ void CrateApp::initApp()
 		layers[4].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.5,1.5,.1);*/
 	}
 
+	laserTheta = (int)(mTheta+PI)%6;
 
 	//bullet1[0].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.5,.05,.05);
 	//bullet1[1].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.05,.5,.05);
@@ -336,6 +337,7 @@ void CrateApp::reinitialize()
 	//laser.setInActive();
 	//laserTimer = 0;
 	laserTheta = (int)(mTheta+PI)%6;
+	laser.setActive();
 
 	if(level==1)
 	{
@@ -454,12 +456,24 @@ void CrateApp::updateScene(float dt)
 			if(bulletObject.collided(&mesh))
 			{
 				bossHealth--;
-				if(bossHealth == 0)
-					mesh.setInActive();
 				bulletObject.setInActive();
-				//PLAY SOUND
-				bossDead = true;
+				if(bossHealth == 0)
+				{
+					mesh.setInActive();
+					//PLAY SOUND
+					bossDead = true;
+					laser.setInActive();
+				}
 			}
+
+			//UPDATE BOSS COLOR
+			if(bossHealth==5) mesh.setColor(D3DXCOLOR(1, 0.25, 0, 1)); //start at bright red and fade to black as health decreases
+			else if(bossHealth==4) mesh.setColor(D3DXCOLOR(1, 0, 0, 1));
+			else if(bossHealth==3) mesh.setColor(D3DXCOLOR(0.75, 0, 0, 1));
+			else if(bossHealth==2) mesh.setColor(D3DXCOLOR(0.5, 0, 0, 1));
+			else if(bossHealth==1) mesh.setColor(D3DXCOLOR(0.25, 0, 0, 1));
+			else if(bossHealth==0) mesh.setColor(D3DXCOLOR(0, 0, 0, 1));
+
 			//WIN 
 			if(bossDead)
 			{
@@ -469,8 +483,9 @@ void CrateApp::updateScene(float dt)
 					if(level==1) 
 					{
 						level = 2;
-						state = nextLevel;
 						reinitialize();
+						state = nextLevel;
+						
 					}
 					else if(level==2)
 					{
@@ -481,11 +496,22 @@ void CrateApp::updateScene(float dt)
 			}
 
 			//LOSE
-			if(abs(laserTheta-mTheta)<.1 && abs(laserPhi-mPhi)<.1)
-				playerHealth -= dt*33;
-			else playerHealth += dt*33;
+			if(laser.getActiveState() && abs(laserTheta-mTheta)<.1 && abs(laserPhi-mPhi)<.1)
+			{
+				if(level==1)
+					playerHealth -= dt*75;
+				else playerHealth -= dt*100;
+			}
+			else if(playerHealth < 100) {
+				if(level==1) playerHealth += dt*45;
+				else playerHealth += dt*10;
+			}
 			if(playerHealth > 100) playerHealth = 100;
-			if(playerHealth <= 0) state = restart;
+			if(playerHealth <= 0) 
+			{
+				state = restart;
+				reinitialize();
+			}
 
 			//BULLET COLLISION ON WALLS
 			if(bulletObject.getActiveState())
@@ -567,8 +593,8 @@ void CrateApp::updateScene(float dt)
 			if(GetAsyncKeyState('D') & 0x8000)	mTheta -= 3.0f*dt;
 			if(GetAsyncKeyState('W') & 0x8000)	mPhi -= 3.0f*dt;
 			if(GetAsyncKeyState('S') & 0x8000)	mPhi += 3.0f*dt;
-			if(GetAsyncKeyState('Z') & 0x8000)	mRadius -= 15.0f*dt;
-			if(GetAsyncKeyState('X') & 0x8000)	mRadius += 15.0f*dt;
+			//if(GetAsyncKeyState('Z') & 0x8000)	mRadius -= 15.0f*dt;
+			//if(GetAsyncKeyState('X') & 0x8000)	mRadius += 15.0f*dt;
 
 			// Restrict the angle mPhi.
 			if( mPhi < 0.1f )	mPhi = 0.1f;
@@ -605,6 +631,7 @@ void CrateApp::updateScene(float dt)
 			if(!enterPressedLastFrame && GetAsyncKeyState(VK_RETURN) & 0x8000) 
 			{
 				state = intro;
+				level = 1;
 				enterPressedLastFrame = true;
 			}
 			else if(!GetAsyncKeyState(VK_RETURN)) enterPressedLastFrame = false;
@@ -789,13 +816,13 @@ void CrateApp::drawScene()
 			{
 				if(abs(laserTheta-mTheta)>.01)
 				{
-					if((laserTheta-mTheta > -PI && laserTheta-mTheta < 0) || (laserTheta-mTheta > PI)) laserTheta += .0015f;
-					else laserTheta -= .0015f;
+					if((laserTheta-mTheta > -PI && laserTheta-mTheta < 0) || (laserTheta-mTheta > PI)) laserTheta += LASER_SPEED_LVL2;
+					else laserTheta -= LASER_SPEED_LVL2;
 				}
 				if(abs(laserPhi-mPhi)>.01)
 				{
-					if(laserPhi > mPhi) laserPhi -= .0015f;
-					else laserPhi += .0015f;
+					if(laserPhi > mPhi) laserPhi -= LASER_SPEED_LVL2;
+					else laserPhi += LASER_SPEED_LVL2;
 				}
 			}
 			else if(level==1)
@@ -822,7 +849,7 @@ void CrateApp::drawScene()
 			laser.draw();
 
 			std::wostringstream outs;   
-			outs.precision(2);
+			outs.precision(3);
 			//outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n laser phi: " << laserPhi << "\nlaser theta: " << laserTheta
 			outs << L"Health: " << playerHealth;
 			stats = outs.str();
