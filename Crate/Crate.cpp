@@ -17,6 +17,7 @@
 #include "Layer.h"
 #include "Mesh.h"
 #include "constants.h"
+#include "Splashscreen.h"
 #include <sstream>
 #include <string>
 #include <vector>
@@ -59,6 +60,9 @@ private:
 	ID3D10ShaderResourceView* mBackgroundRV;
 
 	Bullet bulletObject;
+
+	Splashscreen introSplashscreen;
+	ID3D10ShaderResourceView* mDiffuseMapRV_IntroScreen;
 
 	Light mParallelLight;
 
@@ -183,14 +187,19 @@ void CrateApp::initApp()
 	
 	mCrateMesh.init(md3dDevice, 1.0f);
 
-	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice,
 		L"murray.jpg", 0, 0, &mDiffuseMapRV, 0 ));
 
-	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice,
 		L"defaultspec.dds", 0, 0, &mSpecMapRV, 0 ));
 
-	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice,
 		L"heic1215b.jpg", 0, 0, &mBackgroundRV, 0 ));
+
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice,
+		L"#selfie.jpg", 0, 0, &mDiffuseMapRV_IntroScreen, 0 ));
+	
+	introSplashscreen.init(md3dDevice, 8.5f, mDiffuseMapRV_IntroScreen, mSpecMapRV, mTech);
 
 	mParallelLight.dir      = D3DXVECTOR3(0.57735f, -0.57735f, 0.57735f);
 	mParallelLight.ambient  = D3DXCOLOR(0.4f, 0.4f, 0.4f, 1.0f);
@@ -559,14 +568,14 @@ void CrateApp::drawScene()
 	D3DXMatrixIdentity(&texMtx);
 	mfxTexMtxVar->SetMatrix((float*)&texMtx);
 
-    D3D10_TECHNIQUE_DESC techDesc;
-    mTech->GetDesc( &techDesc );
-    for(UINT p = 0; p < techDesc.Passes; ++p)
-    {
-        mTech->GetPassByIndex( p )->Apply(0);
-        
+  //  D3D10_TECHNIQUE_DESC techDesc;
+  //  mTech->GetDesc( &techDesc );
+  //  for(UINT p = 0; p < techDesc.Passes; ++p)
+  //  {
+  //      mTech->GetPassByIndex( p )->Apply(0);
+  //      
 		//mCrateMesh.draw();
-    }
+  //  }
 
 	//BACKGROUND
 	mfxDiffuseMapVar->SetResource(mBackgroundRV);
@@ -584,6 +593,18 @@ void CrateApp::drawScene()
 		{
 			//DRAW INTRO SCREEN CUBE
 
+			//Splashscreen
+			mWVP = mCrateWorld*mView*mProj;
+			mfxWVPVar->SetMatrix((float*)&mWVP);
+			mfxDiffuseMapVar->SetResource(introSplashscreen.getDiffuseMapRV());
+			mfxSpecMapVar->SetResource(introSplashscreen.getSpecMapRV());
+			D3D10_TECHNIQUE_DESC techDesc;
+			mTech->GetDesc( &techDesc );
+			for(UINT p = 0; p < techDesc.Passes; ++p)
+			{
+				mTech->GetPassByIndex( p )->Apply(0);
+				introSplashscreen.draw();
+			}
 		}
 
 	case game:
@@ -691,8 +712,25 @@ void CrateApp::drawScene()
 		break;
 	}
 
+	Matrix translateOut;
+	Matrix rotatePhi, rotateTheta;
+	RotateX(&rotatePhi, -laserPhi+PI/2);
+	RotateY(&rotateTheta, -laserTheta);
+	Translate(&translateOut, 0, 0, -mRadius*2);
+	mWVP = laser.getWorldMatrix() *translateOut * rotatePhi * rotateTheta * mView*mProj;
+	mfxWVPVar->SetMatrix((float*)&mWVP);
+	laser.setMTech(mTech);
+	laser.draw();
 
-	
+	std::wostringstream outs;   
+	outs.precision(2);
+	outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n laser phi: " << laserPhi << "\nlaser theta: " << laserTheta << "\nlaserTimer: " << laserTimer;
+	stats = outs.str();
+	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
+	RECT R = {5, 5, 0, 0};
+	mFont->DrawText(0, stats.c_str(), -1, &R, DT_NOCLIP, BLACK);
+
+	mSwapChain->Present(0, 0);
 }
 
 void CrateApp::buildFX()
