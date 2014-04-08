@@ -88,6 +88,7 @@ private:
 	// additional effect variables for color changing
 	ID3D10EffectVariable *mfxOverrideColorFlag;
 	ID3D10EffectVectorVariable *mfxObjectColor;
+	ID3D10EffectVariable *mfxAmbientOnlyFlag;
 
 	D3DXMATRIX mCrateWorld;
 
@@ -221,14 +222,14 @@ void CrateApp::initApp()
 	
 	mParallelLight.dir      = D3DXVECTOR3(0.57735f, -0.57735f, 0.57735f);
 	mParallelLight.ambient  = D3DXCOLOR(0.1f, 0.1f, 0.1f, 1.0f);
-	mParallelLight.diffuse  = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	mParallelLight.diffuse  = D3DXCOLOR(0.5f, 0.5f, 0.5f, 1.0f);
 	mParallelLight.specular = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 
 	// Note: the boss emissive light didn't work out as well as hoped, so this light has been re-purposed as another
 	// parallel source, to provide more even lighting for the background.
 	mBossEmissive.dir		= D3DXVECTOR3(-.57735f,.57735f,-.57735f);
 	mBossEmissive.ambient	= D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
-	mBossEmissive.diffuse	= D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	mBossEmissive.diffuse	= D3DXCOLOR(0.5f, 0.5f, 0.5f, 1.0f);
 	mBossEmissive.specular	= D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 
 
@@ -603,6 +604,10 @@ void CrateApp::drawScene()
 		//mCrateMesh.draw();
   //  }
 
+	// Set lighting to ambient only for the background
+	int ambientOnlyFlag = 1;
+	mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
+
 	//BACKGROUND
 	mfxDiffuseMapVar->SetResource(mBackgroundRV);
 	mfxSpecMapVar->SetResource(mSpecMapRV);
@@ -612,6 +617,10 @@ void CrateApp::drawScene()
 		background[i].setMTech(mTech);
 		background[i].draw();
 	}
+
+	// Turn regular lighting back on for the rest of the scene
+	ambientOnlyFlag = 0;
+	mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
 
 	switch(state) {
 
@@ -793,6 +802,7 @@ void CrateApp::buildFX()
 	mfxTexMtxVar     = mFX->GetVariableByName("gTexMtx")->AsMatrix();
 	mfxOverrideColorFlag = mFX->GetVariableByName("gOverrideColorFlag");
 	mfxObjectColor	 = mFX->GetVariableByName("gObjectColor")->AsVector();
+	mfxAmbientOnlyFlag = mFX->GetVariableByName("gAmbientOnlyFlag");
 }
 
 void CrateApp::buildVertexLayouts()
