@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include "audio.h"
 
 // Utility functions for generating meshes
 std::vector<Vector3> generateSurfrev2D(float degreesY); // generates a x-z cross-sectional "slice" (of specified degrees around the y-axis) of a unit spherical shell (thickness 0.1)
@@ -46,6 +47,7 @@ private:
 	void buildVertexLayouts();
 
 private:
+	Audio *audio;
 
 	Box mCrateMesh;
 	Box target1, bullet;
@@ -174,6 +176,8 @@ CrateApp::~CrateApp()
 	ReleaseCOM(mDiffuseMapRV);
 	ReleaseCOM(mSpecMapRV);
 	ReleaseCOM(mBackgroundRV);
+
+	delete audio;
 }
 
 void CrateApp::initApp()
@@ -183,6 +187,21 @@ void CrateApp::initApp()
 	generateSurfrev3D(output, 360, mesh);
 
 	D3DApp::initApp();
+
+	// init sound system
+    audio = new Audio();
+	HRESULT hr;
+    if (*WAVE_BANK != '\0' && *SOUND_BANK != '\0')  // if sound files defined
+    {
+        if( FAILED( hr = audio->initialize() ) )
+        {
+			// throwing strings since we don't have the GameError class from last semester
+            if( hr == HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND ) )
+                throw(std::string("Failed to initialize sound system because media file not found."));
+            else
+                throw(std::string("Failed to initialize sound system."));
+        }
+    }
 
 	mClearColor = D3DXCOLOR(0.9f, 0.9f, 0.9f, 1.0f);
 
@@ -328,6 +347,9 @@ void CrateApp::updateScene(float dt)
 		}
 	case start:
 		{
+			static bool audioStarted = false;
+			if(!audioStarted)
+				audio->playCue(INTROMUSIC);
 			//UPDATE THE INTRO SPLASHSCREEN CUBE
 			if(GetAsyncKeyState(VK_RETURN) & 0x8000) 
 			{
