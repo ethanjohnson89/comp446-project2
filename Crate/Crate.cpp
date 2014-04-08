@@ -77,6 +77,8 @@ private:
 	Bullet bulletObject;
 
 	Light mParallelLight;
+	Light mBossEmissive;
+	Light mSpot;
 
 	ID3D10Effect* mFX;
 	ID3D10EffectTechnique* mTech;
@@ -87,13 +89,16 @@ private:
 	ID3D10EffectMatrixVariable* mfxWVPVar;
 	ID3D10EffectMatrixVariable* mfxWorldVar;
 	ID3D10EffectVariable* mfxEyePosVar;
-	ID3D10EffectVariable* mfxLightVar;
+	ID3D10EffectVariable* mfxLightVar; // parallel light
+	ID3D10EffectVariable *mfxBossEmissiveLightVar;
+	ID3D10EffectVariable *mfxSpotLightVar;
 	ID3D10EffectShaderResourceVariable* mfxDiffuseMapVar;
 	ID3D10EffectShaderResourceVariable* mfxSpecMapVar;
 	ID3D10EffectMatrixVariable* mfxTexMtxVar;
 	// additional effect variables for color changing
 	ID3D10EffectVariable *mfxOverrideColorFlag;
 	ID3D10EffectVectorVariable *mfxObjectColor;
+	ID3D10EffectVariable *mfxAmbientOnlyFlag;
 
 	D3DXMATRIX mCrateWorld;
 
@@ -221,7 +226,7 @@ void CrateApp::initApp()
 	mCrateMesh.init(md3dDevice, 1.0f);
 
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice,
-		L"murray.jpg", 0, 0, &mDiffuseMapRV, 0 ));
+		L"walltexture2.jpg", 0, 0, &mDiffuseMapRV, 0 ));
 
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice,
 		L"defaultspec.dds", 0, 0, &mSpecMapRV, 0 ));
@@ -258,9 +263,28 @@ void CrateApp::initApp()
 	endSplashscreen.init(md3dDevice, 7.75f, mEndRV, mSpecMapRV, mTech);
 
 	mParallelLight.dir      = D3DXVECTOR3(0.57735f, -0.57735f, 0.57735f);
-	mParallelLight.ambient  = D3DXCOLOR(0.4f, 0.4f, 0.4f, 1.0f);
-	mParallelLight.diffuse  = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	mParallelLight.ambient  = D3DXCOLOR(0.1f, 0.1f, 0.1f, 1.0f);
+	mParallelLight.diffuse  = D3DXCOLOR(0.45f, 0.45f, 0.45f, 1.0f);
 	mParallelLight.specular = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+
+	// Note: the boss emissive light didn't work out as well as hoped, so this light has been re-purposed as another
+	// parallel source, to provide more even lighting for the background.
+	mBossEmissive.dir		= D3DXVECTOR3(-.57735f,.57735f,-.57735f);
+	mBossEmissive.ambient	= D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+	mBossEmissive.diffuse	= D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	mBossEmissive.specular	= D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+
+	// Spotlight - from player position, aimed at boss (position/direction updated in update())
+	// *** Turned off at the moment - it didn't really seem to add much to the scene; going with brighter diffuse lighting
+	// instead produced a better effect.
+	mSpot.ambient  = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+	mSpot.diffuse  = D3DXCOLOR(0,0,0,1);//D3DXCOLOR(10.0f, 10.0f, 10.0f, 1.0f);
+	mSpot.specular = D3DXCOLOR(1,1,1,1);//D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	mSpot.att.x    = 0.01f;
+	mSpot.att.y    = 0.01f;
+	mSpot.att.z    = 0.01f;
+	mSpot.spotPow  = 20.0f;
+	mSpot.range    = 40.0f;
 
 
 	bullet.init(md3dDevice, 1.0f);
@@ -661,6 +685,10 @@ void CrateApp::updateScene(float dt)
 	D3DXVECTOR3 target(0.0f, 0.0f, 0.0f);
 	D3DXVECTOR3 up(0.0f, 1.0f, 0.0f);
 	D3DXMatrixLookAtLH(&mView, &mEyePos, &target, &up);
+
+	// Update position of spotlight based on eye position
+	mSpot.pos = mEyePos;
+	Normalize(&mSpot.dir, &(Vector3(0,0,0)-mEyePos));
 }
 
 void CrateApp::regenerateWalls(float dt)
@@ -709,6 +737,8 @@ void CrateApp::drawScene()
 	// set constants
 	mfxEyePosVar->SetRawValue(&mEyePos, 0, sizeof(D3DXVECTOR3));
 	mfxLightVar->SetRawValue(&mParallelLight, 0, sizeof(Light));
+	mfxBossEmissiveLightVar->SetRawValue(&mBossEmissive, 0, sizeof(Light));
+	mfxSpotLightVar->SetRawValue(&mSpot, 0, sizeof(Light));
 	mWVP = mCrateWorld*mView*mProj;
 	mfxWVPVar->SetMatrix((float*)&mWVP);
 	mfxWorldVar->SetMatrix((float*)&mCrateWorld);
@@ -729,6 +759,10 @@ void CrateApp::drawScene()
 	//mCrateMesh.draw();
 	//  }
 
+	// Set lighting to ambient only for the background
+	int ambientOnlyFlag = 1;
+	mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
+
 	//BACKGROUND
 	mfxDiffuseMapVar->SetResource(mBackgroundRV);
 	mfxSpecMapVar->SetResource(mSpecMapRV);
@@ -739,24 +773,46 @@ void CrateApp::drawScene()
 		background[i].draw();
 	}
 
+	// Turn regular lighting back on for the rest of the scene
+	ambientOnlyFlag = 0;
+	mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
+
 	switch(state) {
 	case intro:
 		{
+			// Set lighting to ambient only for the splashscreen
+			int ambientOnlyFlag = 1;
+			mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
+
 			mWVP = mCrateWorld*mView*mProj;
 			mfxWVPVar->SetMatrix((float*)&mWVP);
 			mfxDiffuseMapVar->SetResource(introIntroSplashscreen.getDiffuseMapRV());
 			mfxSpecMapVar->SetResource(introIntroSplashscreen.getSpecMapRV());
 			introIntroSplashscreen.draw();
+
+			// Turn regular lighting back on for the rest of the scene
+			ambientOnlyFlag = 0;
+			mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
+
 			break;
 		}
 	case start:
 		{
+			// Set lighting to ambient only for the splashscreen
+			int ambientOnlyFlag = 1;
+			mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
+
 			//Splashscreen
 			mWVP = mCrateWorld*mView*mProj;
 			mfxWVPVar->SetMatrix((float*)&mWVP);
 			mfxDiffuseMapVar->SetResource(introSplashscreen.getDiffuseMapRV());
 			mfxSpecMapVar->SetResource(introSplashscreen.getSpecMapRV());
 			introSplashscreen.draw();
+
+			// Turn regular lighting back on for the rest of the scene
+			ambientOnlyFlag = 0;
+			mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
+
 			break;
 		}
 	case game:
@@ -875,29 +931,56 @@ void CrateApp::drawScene()
 		}
 	case restart:
 		{
+			// Set lighting to ambient only for the splashscreen
+			int ambientOnlyFlag = 1;
+			mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
+
 			mWVP = mCrateWorld*mView*mProj;
 			mfxWVPVar->SetMatrix((float*)&mWVP);
 			mfxDiffuseMapVar->SetResource(restartSplashscreen.getDiffuseMapRV());
 			mfxSpecMapVar->SetResource(restartSplashscreen.getSpecMapRV());
 			restartSplashscreen.draw();
+
+			// Turn regular lighting back on for the rest of the scene
+			ambientOnlyFlag = 0;
+			mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
+
 			break;
 		}
 	case nextLevel:
 		{
+			// Set lighting to ambient only for the splashscreen
+			int ambientOnlyFlag = 1;
+			mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
+
 			mWVP = mCrateWorld*mView*mProj;
 			mfxWVPVar->SetMatrix((float*)&mWVP);
 			mfxDiffuseMapVar->SetResource(nextLevelSplashscreen.getDiffuseMapRV());
 			mfxSpecMapVar->SetResource(nextLevelSplashscreen.getSpecMapRV());
 			nextLevelSplashscreen.draw();
+
+			// Turn regular lighting back on for the rest of the scene
+			ambientOnlyFlag = 0;
+			mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
+
 			break;
 		}
 	case end:
 		{
+			// Set lighting to ambient only for the splashscreen
+			int ambientOnlyFlag = 1;
+			mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
+
 			mWVP = mCrateWorld*mView*mProj;
 			mfxWVPVar->SetMatrix((float*)&mWVP);
 			mfxDiffuseMapVar->SetResource(endSplashscreen.getDiffuseMapRV());
 			mfxSpecMapVar->SetResource(endSplashscreen.getSpecMapRV());
 			endSplashscreen.draw();
+
+			// Turn regular lighting back on for the rest of the scene
+			ambientOnlyFlag = 0;
+			mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
+
 			break;
 		}
 	}
@@ -935,11 +1018,14 @@ void CrateApp::buildFX()
 	mfxWorldVar      = mFX->GetVariableByName("gWorld")->AsMatrix();
 	mfxEyePosVar     = mFX->GetVariableByName("gEyePosW");
 	mfxLightVar      = mFX->GetVariableByName("gLight");
+	mfxSpotLightVar	 = mFX->GetVariableByName("gSpotLight");
+	mfxBossEmissiveLightVar = mFX->GetVariableByName("gBossEmissiveLight");
 	mfxDiffuseMapVar = mFX->GetVariableByName("gDiffuseMap")->AsShaderResource();
 	mfxSpecMapVar    = mFX->GetVariableByName("gSpecMap")->AsShaderResource();
 	mfxTexMtxVar     = mFX->GetVariableByName("gTexMtx")->AsMatrix();
 	mfxOverrideColorFlag = mFX->GetVariableByName("gOverrideColorFlag");
 	mfxObjectColor	 = mFX->GetVariableByName("gObjectColor")->AsVector();
+	mfxAmbientOnlyFlag = mFX->GetVariableByName("gAmbientOnlyFlag");
 }
 
 void CrateApp::buildVertexLayouts()
