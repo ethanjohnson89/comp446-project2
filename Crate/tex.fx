@@ -21,6 +21,9 @@ cbuffer cbPerObject
 	float4x4 gWorld;
 	float4x4 gWVP; 
 	float4x4 gTexMtx;
+
+	int gOverrideColorFlag;
+	float4 gObjectColor;
 };
 
 // Nonnumeric values cannot be added to a cbuffer.
@@ -69,9 +72,19 @@ VS_OUT VS(VS_IN vIn)
 
 float4 PS(VS_OUT pIn) : SV_Target
 {
-	// Get materials from texture maps.
-	float4 diffuse = gDiffuseMap.Sample( gTriLinearSam, pIn.texC );
-	float4 spec    = gSpecMap.Sample( gTriLinearSam, pIn.texC );
+	float4 diffuse, spec;
+	if(gOverrideColorFlag == 0)
+	{
+		// Get materials from texture maps.
+		diffuse = gDiffuseMap.Sample( gTriLinearSam, pIn.texC );
+		spec    = gSpecMap.Sample( gTriLinearSam, pIn.texC );
+	}
+	else
+	{
+		// Use specified per-object color (for now, same for diffuse and specular)
+		diffuse = gObjectColor;
+		spec	= gObjectColor;
+	}
 	
 	// Map [0,1] --> [0,256]
 	spec.a *= 256.0f;

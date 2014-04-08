@@ -74,6 +74,9 @@ private:
 	ID3D10EffectShaderResourceVariable* mfxDiffuseMapVar;
 	ID3D10EffectShaderResourceVariable* mfxSpecMapVar;
 	ID3D10EffectMatrixVariable* mfxTexMtxVar;
+	// additional effect variables for color changing
+	ID3D10EffectVariable *mfxOverrideColorFlag;
+	ID3D10EffectVectorVariable *mfxObjectColor;
 
 	D3DXMATRIX mCrateWorld;
 
@@ -165,6 +168,9 @@ void CrateApp::initApp()
 
 	// DEBUG
 	mesh.init(md3dDevice, 2.0, Vector3(1,0,0), Vector3(0,0,0), 0, 2);
+	mesh.setOverrideColorVar(mfxOverrideColorFlag);
+	mesh.setObjectColorVar(mfxObjectColor);
+	mesh.setColor(D3DXCOLOR(1, 0, 0, 1));
 	
 	mCrateMesh.init(md3dDevice, 1.0f);
 
@@ -612,6 +618,8 @@ void CrateApp::buildFX()
 	mfxDiffuseMapVar = mFX->GetVariableByName("gDiffuseMap")->AsShaderResource();
 	mfxSpecMapVar    = mFX->GetVariableByName("gSpecMap")->AsShaderResource();
 	mfxTexMtxVar     = mFX->GetVariableByName("gTexMtx")->AsMatrix();
+	mfxOverrideColorFlag = mFX->GetVariableByName("gOverrideColorFlag");
+	mfxObjectColor	 = mFX->GetVariableByName("gObjectColor")->AsVector();
 }
 
 void CrateApp::buildVertexLayouts()
