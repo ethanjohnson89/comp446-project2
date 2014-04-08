@@ -44,6 +44,26 @@ struct Layer {
 				startingPhi[i] = PI/2;
 			}
 		}
+		if(axis==Z)
+		{
+			for(int i=0; i<NUM_WALLS; i++)
+			{
+				//startingTheta[i] = i*2*PI/NUM_WALLS; 
+				startingPhi[i] = i*2*PI/NUM_WALLS;
+			}
+		}
+		if(axis==X)
+		{
+			for(int i=0; i<NUM_WALLS; i++)
+			{
+				//startingTheta[i] = i*2*PI/NUM_WALLS + PI; 
+				//startingPhi[i] = i*2*PI/NUM_WALLS + PI/2; 
+				float t = i*2*PI/NUM_WALLS + PI/2;
+				int temp = static_cast<int>(t/(2*PI));
+				startingPhi[i] = t - static_cast<float>(temp)*(2*PI);
+				//phis[i] = startingPhi[i];
+			}
+		}
 	}
 	Layer::Layer() {}
 
@@ -69,14 +89,45 @@ struct Layer {
 			Translate(&translate,0,radius,0);
 			RotateZ(&spin, ToRadian(spinAmount*50));
 			for(int i=0; i<NUM_WALLS; i++)
+			{
 				RotateZ(&rotations[i], i*2*PI/NUM_WALLS);
+				float t = ToRadian(spinAmount*50) + startingPhi[i];
+				int temp = static_cast<int>(t/(2*PI));
+				float tempPhi = t - static_cast<float>(temp)*(2*PI);
+				if(tempPhi > PI)
+				{
+					phis[i] = 2*PI - tempPhi; //IF ON RIGHT SIDE GOING BACK UP
+					thetas[i] = 3*PI/2;
+				}
+				else 
+				{
+					phis[i] = tempPhi;
+					thetas[i] = PI/2;
+				}
+				//phis[i] = startingPhi[i];
+			}
 		}
 		else if(axis==X)
 		{
 			Translate(&translate,0,0,radius);
 			RotateX(&spin, ToRadian(spinAmount*50));
 			for(int i=0; i<NUM_WALLS; i++)
+			{
 				RotateX(&rotations[i], i*2*PI/NUM_WALLS);
+				float t = ToRadian(spinAmount*50) + startingPhi[i];
+				int temp = static_cast<int>(t/(2*PI));
+				float tempPhi = t - static_cast<float>(temp)*(2*PI);
+				if(tempPhi > PI)
+				{
+					phis[i] = 2*PI - tempPhi; 
+					thetas[i] = 0;
+				}
+				else 
+				{
+					phis[i] = tempPhi;
+					thetas[i] = PI;
+				}
+			}
 		}
 		else if(axis==YZ)
 		{
@@ -161,6 +212,8 @@ private:
 	float laserTimer;
 
 	int bossHealth;
+
+	
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
@@ -284,7 +337,7 @@ void CrateApp::updateScene(float dt)
 	if(GetAsyncKeyState('Z') & 0x8000)	mRadius -= 15.0f*dt;
 	if(GetAsyncKeyState('X') & 0x8000)	mRadius += 15.0f*dt;
 
-	if(GetAsyncKeyState(' ') & 0x8000)
+	if(!bulletObject.getActiveState() && GetAsyncKeyState(' ') & 0x8000)
 	{
 		//if(!bullet1[0].getActiveState())
 		//{
@@ -297,7 +350,7 @@ void CrateApp::updateScene(float dt)
 			//	bullet1[i].setVelocity(t*2);
 			//}
 	//	}
-		bulletObject.shoot(mEyePos,2*Vector3(-mEyePos), mTheta, mPhi);
+		bulletObject.shoot(mEyePos/2,2*Vector3(-mEyePos), mTheta, mPhi);
 	}
 	
 	spinAmount += 1*dt;
@@ -337,12 +390,18 @@ void CrateApp::updateScene(float dt)
 
 
 	//BULLET COLLISION ON WALLS
-	for(int i=0; i<NUM_WALLS; i++)
+	if(bulletObject.getActiveState())
 	{
-		if(bulletObject.getActiveState() && (abs(bulletObject.getTheta() - layers[0].thetas[i]) < .3) && (abs(bulletObject.getPhi() - layers[0].phis[i]) < .3) && (abs(bulletObject.getDistanceToOrigin() - layers[0].radius) < .5))
+		for(int j=0; j<NUM_LAYERS; j++)
 		{
-			layers[0].walls[i].setInActive();
-			bulletObject.setInActive();
+			for(int i=0; i<NUM_WALLS; i++)
+			{
+				if(layers[j].walls[i].getActiveState() && ((abs(bulletObject.getTheta() - layers[j].thetas[i]) < .3) || (abs(bulletObject.getTheta() - 2*PI - layers[j].thetas[i]) < .3)) && (abs(bulletObject.getPhi() - layers[j].phis[i]) < .3) && (abs(bulletObject.getDistanceToOrigin() - layers[j].radius) < .5))
+				{
+					layers[j].walls[i].setInActive();
+					bulletObject.setInActive();
+				}
+			}
 		}
 	}
 
@@ -447,7 +506,7 @@ void CrateApp::drawScene()
 	RotateY(&s, PI/4);
 
 	//LAYERS:
-	for(int i=0; i<1; i++)
+	for(int i=0; i<3; i++)
 	{
 		for(int j=0; j<NUM_WALLS; j++)
 		{
@@ -458,9 +517,14 @@ void CrateApp::drawScene()
 		}
 	}
 
+	/*mWVP = layers[2].walls[5].getWorldMatrix() * layers[2].translate  * layers[2].rotations[5] * layers[2].spin * mView*mProj;
+	mfxWVPVar->SetMatrix((float*)&mWVP);
+	layers[2].walls[5].setMTech(mTech);
+	layers[2].walls[5].draw();*/
+
 	//FOR DIAGONAL ROTATIONS:
 	/*for(int i=3; i<NUM_LAYERS; i++)
-	{
+	{0
 		for(int j=0; j<NUM_WALLS; j++)
 		{
 			mWVP = layers[i].walls[j].getWorldMatrix() * layers[i].translate  * layers[i].rotations[j] * layers[i].spin * layers[i].diagonal * mView*mProj;
@@ -499,7 +563,7 @@ void CrateApp::drawScene()
 	std::wostringstream outs;   
 	outs.precision(2);
 	//outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n laser phi: " << laserPhi << "\nlaser theta: " << laserTheta << "\nlaserTimer: " << laserTimer;
-	outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n wall1 phi: " << layers[0].phis[3] << "\nwall1 theta: " << layers[0].thetas[3] << "\nspinAmount: " << spinAmount;
+	outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n wall1 phi: " << layers[2].phis[5] << "\nwall1 theta: " << layers[2].thetas[5];
 	stats = outs.str();
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 	RECT R = {5, 5, 0, 0};

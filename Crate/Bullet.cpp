@@ -5,7 +5,7 @@ Bullet::Bullet()
 {
 	radius = 0;
 	speed = 0;
-	active = true;
+	active = false;
 	Identity(&world);
 
 	rotX = rotY = rotZ = 0;
@@ -104,7 +104,15 @@ void Bullet::update(float dt)
 	rotZ = spinAmountZ;*/
 
 	if(active)
+	{
 		distanceToOrigin = D3DXVec3Length(&position);
+		if(distanceToOrigin > 25) 
+		{
+			active = false;
+			for(int i=0; i<3;i++)
+				pieces[i].setInActive();
+		}
+	}
 
 
 	Matrix rotXM, rotYM, rotZM, transM, scaleM;
