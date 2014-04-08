@@ -407,7 +407,9 @@ void CrateApp::drawScene()
 	//}
 
 	// DEBUG: draw the surfrev-generated mesh object created earlier
-	mWVP = mesh.getWorldMatrix() * mView * mProj;
+	Matrix meshTrans;
+	Translate(&meshTrans, -1, 0, 0); // to center the sphere at 0,0,0 before applying the world matrix (kind of a hack)
+	mWVP = meshTrans * mesh.getWorldMatrix() * mView * mProj;
 	mfxWVPVar->SetMatrix((float*)&mWVP);
 	mesh.setMTech(mTech);
 	mesh.draw();
