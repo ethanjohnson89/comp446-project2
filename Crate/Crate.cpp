@@ -579,7 +579,7 @@ void generateSurfrev3D(std::vector<Vector3> polygon, float degreesZ, Mesh &mesh)
 			VectorCross(&faceNormal, &line1, &line2);
 			Normalize(&faceNormal, &faceNormal);
 
-			// **** Note: right now the texture coordinates are just placeholders (all 0,1)
+			// **** TODO: right now the texture coordinates are just placeholders (all 0,1)
 			// Define first triangle
 			face.p0 = Vertex(begin[i], faceNormal, 0, 1);
 			face.p1 = Vertex(begin[i+1], faceNormal, 0, 1);
@@ -597,6 +597,39 @@ void generateSurfrev3D(std::vector<Vector3> polygon, float degreesZ, Mesh &mesh)
 			face.p1 = Vertex(end[i], faceNormal, 0, 1);
 			face.p2 = Vertex(begin[i], faceNormal, 0, 1);
 			mesh.addFace(face);
+		}
+
+		// If this is the first or last slice, triangulate the end to cap it off
+		if(theta == 0.0f) // first slice
+		{
+			// Compute normal for the whole endcap; for this end, it's simply (1,0,0)
+			Vector3 endcapNormal(1,0,0);
+
+			for(int i = 0; i < polygon.size() - 1; i++)
+			{
+				Mesh::Face face;
+				face.p0 = Vertex(begin[0], endcapNormal, 0, 1); // *** TODO: as above, texture coords. are placeholders
+				face.p1 = Vertex(begin[i], endcapNormal, 0, 1);
+				face.p2 = Vertex(begin[i+1], endcapNormal, 0, 1);
+				mesh.addFace(face);
+			}
+		}
+		else if(theta + sliceSize > degreesZ) // last slice
+		{
+			// Compute normal for the whole endcap: take (1,0,0) and rotate it by degreesZ
+			// (note that we've already computed the matrix endRot above for this exact rotation)
+			Vector3 endcapNormal(1,0,0);
+			TransformCoord(&endcapNormal, &endcapNormal, &endRot);
+			Normalize(&endcapNormal, &endcapNormal);
+
+			for(int i = 0; i < polygon.size() - 1; i++)
+			{
+				Mesh::Face face;
+				face.p0 = Vertex(begin[0], endcapNormal, 0, 1); // *** TODO: as above, texture coords. are placeholders
+				face.p1 = Vertex(begin[i], endcapNormal, 0, 1);
+				face.p2 = Vertex(begin[i+1], endcapNormal, 0, 1);
+				mesh.addFace(face);
+			}
 		}
 	}
 }
