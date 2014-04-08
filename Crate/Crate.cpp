@@ -431,7 +431,7 @@ void CrateApp::updateScene(float dt)
 			else if(!GetAsyncKeyState(VK_RETURN)) enterPressedLastFrame = false;*/
 
 			introMusicTimer += dt;
-			if(introMusicTimer > 13)
+			if(introMusicTimer > 12.5)
 			{
 				audio->playCue(LASER);
 				state = game;
