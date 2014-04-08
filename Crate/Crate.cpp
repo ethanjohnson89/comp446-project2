@@ -152,7 +152,7 @@ void CrateApp::initApp()
 	buildVertexLayouts();
 
 	// DEBUG
-	mesh.init(md3dDevice, 1.0, Vector3(1,0,0), Vector3(0,0,0), 0, 1);
+	mesh.init(md3dDevice, 2.0, Vector3(1,0,0), Vector3(0,0,0), 0, 2);
 	
 	mCrateMesh.init(md3dDevice, 1.0f);
 
@@ -269,10 +269,18 @@ void CrateApp::updateScene(float dt)
 	gameObject6.update(dt);
 
 	//BULLET COLLISION ON BOSS
-	if(bulletObject.collided(&gameObject6))
+	//if(bulletObject.collided(&gameObject6))
+	//{
+	//	bossHealth--;
+	//	if(bossHealth == 0) gameObject6.setInActive();
+	//	//for(int i=0; i<3; i++)
+	//	//	bullet1[i].setInActive();
+	//	bulletObject.setInActive();
+	//}
+	if(bulletObject.collided(&mesh))
 	{
 		bossHealth--;
-		if(bossHealth == 0) gameObject6.setInActive();
+		if(bossHealth == 0) mesh.setInActive();
 		//for(int i=0; i<3; i++)
 		//	bullet1[i].setInActive();
 		bulletObject.setInActive();
@@ -379,40 +387,36 @@ void CrateApp::drawScene()
 	mfxWVPVar->SetMatrix((float*)&mWVP);
 	gameObject6.setMTech(mTech);
 	gameObject6.draw();*/
+	mWVP = mesh.getWorldMatrix() * mView * mProj;
+	mfxWVPVar->SetMatrix((float*)&mWVP);
+	mesh.setMTech(mTech);
+	mesh.draw();
 
 	Matrix s;
 	RotateY(&s, PI/4);
 
 	//LAYERS:
-	//for(int i=0; i<3; i++)
-	//{
-	//	for(int j=0; j<NUM_WALLS; j++)
-	//	{
-	//		mWVP = layers[i].walls[j].getWorldMatrix() * layers[i].translate  * layers[i].rotations[j] * layers[i].spin * mView*mProj;
-	//		mfxWVPVar->SetMatrix((float*)&mWVP);
-	//		layers[i].walls[j].setMTech(mTech);
-	//		layers[i].walls[j].draw();
-	//	}
-	//}
-	////FOR DIAGONAL ROTATIONS:
-	//for(int i=3; i<NUM_LAYERS; i++)
-	//{
-	//	for(int j=0; j<NUM_WALLS; j++)
-	//	{
-	//		mWVP = layers[i].walls[j].getWorldMatrix() * layers[i].translate  * layers[i].rotations[j] * layers[i].spin * layers[i].diagonal * mView*mProj;
-	//		mfxWVPVar->SetMatrix((float*)&mWVP);
-	//		layers[i].walls[j].setMTech(mTech);
-	//		layers[i].walls[j].draw();
-	//	}
-	//}
-
-	// DEBUG: draw the surfrev-generated mesh object created earlier
-	Matrix meshTrans;
-	Translate(&meshTrans, -1, 0, 0); // to center the sphere at 0,0,0 before applying the world matrix (kind of a hack)
-	mWVP = meshTrans * mesh.getWorldMatrix() * mView * mProj;
-	mfxWVPVar->SetMatrix((float*)&mWVP);
-	mesh.setMTech(mTech);
-	mesh.draw();
+	for(int i=0; i<3; i++)
+	{
+		for(int j=0; j<NUM_WALLS; j++)
+		{
+			mWVP = layers[i].walls[j].getWorldMatrix() * layers[i].translate  * layers[i].rotations[j] * layers[i].spin * mView*mProj;
+			mfxWVPVar->SetMatrix((float*)&mWVP);
+			layers[i].walls[j].setMTech(mTech);
+			layers[i].walls[j].draw();
+		}
+	}
+	//FOR DIAGONAL ROTATIONS:
+	for(int i=3; i<NUM_LAYERS; i++)
+	{
+		for(int j=0; j<NUM_WALLS; j++)
+		{
+			mWVP = layers[i].walls[j].getWorldMatrix() * layers[i].translate  * layers[i].rotations[j] * layers[i].spin * layers[i].diagonal * mView*mProj;
+			mfxWVPVar->SetMatrix((float*)&mWVP);
+			layers[i].walls[j].setMTech(mTech);
+			layers[i].walls[j].draw();
+		}
+	}
 	
 	//bullet
 	bulletObject.setMTech(mTech);
@@ -420,7 +424,7 @@ void CrateApp::drawScene()
 	
 	//laser
 	//TRACKING:
-	/*if(abs(laserTheta-mTheta)>.01)
+	if(abs(laserTheta-mTheta)>.01)
 	{
 		if((laserTheta-mTheta > -PI && laserTheta-mTheta < 0) || (laserTheta-mTheta > PI)) laserTheta += .0015f;
 		else laserTheta -= .0015f;
@@ -438,7 +442,7 @@ void CrateApp::drawScene()
 	mWVP = laser.getWorldMatrix() *translateOut * rotatePhi * rotateTheta * mView*mProj;
 	mfxWVPVar->SetMatrix((float*)&mWVP);
 	laser.setMTech(mTech);
-	laser.draw();*/
+	laser.draw();
 
 	std::wostringstream outs;   
 	outs.precision(2);

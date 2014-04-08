@@ -113,6 +113,8 @@ public:
 			spinAmountZ = 0;
 		rotZ = spinAmountZ;
 
+		Matrix center;
+		Translate(&center, -1, 0, 0); // to center the sphere at 0,0,0 before applying the world matrix (kind of a hack)
 
 		Matrix rotXM, rotYM, rotZM, transM, scaleM;
 		RotateX(&rotXM, rotX);
@@ -120,7 +122,7 @@ public:
 		RotateZ(&rotZM, rotZ); 
 		Scale(&scaleM, scaleX, scaleY, scaleZ);
 		Translate(&transM, position.x, position.y, position.z);
-		world = scaleM * rotXM * rotYM * rotZM * transM;
+		world = scaleM * rotXM * rotYM * rotZM * transM * center;
 	}
 
 	void draw()
@@ -155,6 +157,20 @@ public:
 			overrideColorFlag = 0;
 			mfxOverrideColorVar->SetRawValue(&overrideColorFlag, 0, sizeof(int));
 		}
+	}
+
+	bool collided(GameObject *gameObject)
+	{
+		if(!gameObject->getActiveState() || !active) return false; //no need to calculate if inactive
+
+		Vector3 diff = position - gameObject->getPosition();
+		float length = D3DXVec3LengthSq(&diff);
+		float radii = radiusSquared + gameObject->getRadiusSquare();
+		if (length <= radii) {
+			//this->collisionVelocity(gameObject);
+			return true;
+		}
+		return false;
 	}
 
 	void setPosition (Vector3 pos) {position = pos;}
