@@ -15,6 +15,7 @@
 #include "GameObject.h"
 //#include "Layer.h"
 #include "Bullet.h"
+#include "Splashscreen.h"
 #include <sstream>
 
 #define NUM_WALLS 16
@@ -99,6 +100,9 @@ private:
 	Layer layers[NUM_LAYERS];
 
 	Bullet bulletObject;
+
+	Splashscreen introSplashscreen;
+	ID3D10ShaderResourceView* mDiffuseMapRV_IntroScreen;
 
 	Light mParallelLight;
 
@@ -199,6 +203,10 @@ void CrateApp::initApp()
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"defaultspec.dds", 0, 0, &mSpecMapRV, 0 ));
 
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"#selfie.jpg", 0, 0, &mDiffuseMapRV_IntroScreen, 0 ));
+	
+	introSplashscreen.init(md3dDevice, 8.5f, mDiffuseMapRV_IntroScreen, mSpecMapRV, mTech);
 
 	mParallelLight.dir      = D3DXVECTOR3(0.57735f, -0.57735f, 0.57735f);
 	mParallelLight.ambient  = D3DXCOLOR(0.4f, 0.4f, 0.4f, 1.0f);
@@ -465,6 +473,13 @@ void CrateApp::drawScene()
 	mfxWVPVar->SetMatrix((float*)&mWVP);
 	laser.setMTech(mTech);
 	laser.draw();
+
+	//Splashscreen
+	mWVP = mCrateWorld*mView*mProj;
+	mfxWVPVar->SetMatrix((float*)&mWVP);
+	mfxDiffuseMapVar->SetResource(introSplashscreen.getDiffuseMapRV());
+	mfxSpecMapVar->SetResource(introSplashscreen.getSpecMapRV());
+	introSplashscreen.draw();
 
 	std::wostringstream outs;   
 	outs.precision(2);

@@ -90,6 +90,7 @@
     <ClCompile Include="d3dApp.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="GameTimer.cpp" />
+    <ClCompile Include="Splashscreen.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Box.h" />
@@ -100,6 +101,7 @@
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="GameTimer.h" />
     <ClInclude Include="Light.h" />
+    <ClInclude Include="Splashscreen.h" />
     <ClInclude Include="Vertex.h" />
   </ItemGroup>
   <ItemGroup>
