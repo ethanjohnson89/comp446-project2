@@ -29,4 +29,18 @@
 
 enum State {intro, start, game, end, restart, nextLevel};
 
+//// Audio stuff
+// audio files
+const char WAVE_BANK[]  = "audio\\Win\\Wave Bank.xwb";
+// SOUND_BANK must be location of .xsb file.
+const char SOUND_BANK[] = "audio\\Win\\Sound Bank.xsb";
+
+//audio cues
+const char BULLETSHOOT[] = "bulletshoot";
+const char WALLHIT[] = "wallhit";
+const char BOSSDYING[] = "bossdying";
+const char LASER[] = "laser";
+const char INTROMUSIC[] = "intromusic";
+const char ENDMUSIC[] = "endmusic";
+
 #endif
