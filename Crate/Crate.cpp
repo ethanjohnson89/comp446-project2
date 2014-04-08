@@ -91,6 +91,9 @@ private:
 	float laserTimer;
 
 	int bossHealth;
+
+	// DEBUG
+	Mesh mesh;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
@@ -137,23 +140,9 @@ CrateApp::~CrateApp()
 
 void CrateApp::initApp()
 {
-	// BEGIN DEBUG CODE
-	std::ofstream fout("debug_out.txt");
-
+	// DEBUG
 	std::vector<Vector3> output = generateSurfrev2D(180);
-	for(int i = 0; i < output.size(); i++)
-		fout << "Point " << i << ": x = " << output[i].x << ", y = " << output[i].y << ", z = " << output[i].z << std::endl;
-
-	fout << std::endl << std::endl;
-
-	Mesh mesh;
-	generateSurfrev3D(output, 180, mesh);
-
-	for(int i = 0; i < mesh.vertices.size(); i++)
-		fout << "Vertex " << i << ": x = " << mesh.vertices[i].pos.x << ", y = " << mesh.vertices[i].pos.y << ", z = " << mesh.vertices[i].pos.z << std::endl;
-
-	fout.close();
-	// END DEBUG CODE
+	generateSurfrev3D(output, 360, mesh);
 
 	D3DApp::initApp();
 
@@ -161,6 +150,9 @@ void CrateApp::initApp()
 	
 	buildFX();
 	buildVertexLayouts();
+
+	// DEBUG
+	mesh.init(md3dDevice, 1.0, Vector3(1,0,0), Vector3(0,0,0), 0, 1);
 	
 	mCrateMesh.init(md3dDevice, 1.0f);
 
@@ -223,6 +215,9 @@ void CrateApp::onResize()
 void CrateApp::updateScene(float dt)
 {
 	D3DApp::updateScene(dt);
+
+	// DEBUG
+	mesh.update(dt);
 
 	// Update angles based on input to orbit camera around scene.
 	if(GetAsyncKeyState('A') & 0x8000)	mTheta -= 3.0f*dt;
@@ -380,36 +375,42 @@ void CrateApp::drawScene()
     }
 
 	//BOSS
-	mWVP = gameObject6.getWorldMatrix() *mView*mProj;
+	/*mWVP = gameObject6.getWorldMatrix() *mView*mProj;
 	mfxWVPVar->SetMatrix((float*)&mWVP);
 	gameObject6.setMTech(mTech);
-	gameObject6.draw();
+	gameObject6.draw();*/
 
 	Matrix s;
 	RotateY(&s, PI/4);
 
 	//LAYERS:
-	for(int i=0; i<3; i++)
-	{
-		for(int j=0; j<NUM_WALLS; j++)
-		{
-			mWVP = layers[i].walls[j].getWorldMatrix() * layers[i].translate  * layers[i].rotations[j] * layers[i].spin * mView*mProj;
-			mfxWVPVar->SetMatrix((float*)&mWVP);
-			layers[i].walls[j].setMTech(mTech);
-			layers[i].walls[j].draw();
-		}
-	}
-	//FOR DIAGONAL ROTATIONS:
-	for(int i=3; i<NUM_LAYERS; i++)
-	{
-		for(int j=0; j<NUM_WALLS; j++)
-		{
-			mWVP = layers[i].walls[j].getWorldMatrix() * layers[i].translate  * layers[i].rotations[j] * layers[i].spin * layers[i].diagonal * mView*mProj;
-			mfxWVPVar->SetMatrix((float*)&mWVP);
-			layers[i].walls[j].setMTech(mTech);
-			layers[i].walls[j].draw();
-		}
-	}
+	//for(int i=0; i<3; i++)
+	//{
+	//	for(int j=0; j<NUM_WALLS; j++)
+	//	{
+	//		mWVP = layers[i].walls[j].getWorldMatrix() * layers[i].translate  * layers[i].rotations[j] * layers[i].spin * mView*mProj;
+	//		mfxWVPVar->SetMatrix((float*)&mWVP);
+	//		layers[i].walls[j].setMTech(mTech);
+	//		layers[i].walls[j].draw();
+	//	}
+	//}
+	////FOR DIAGONAL ROTATIONS:
+	//for(int i=3; i<NUM_LAYERS; i++)
+	//{
+	//	for(int j=0; j<NUM_WALLS; j++)
+	//	{
+	//		mWVP = layers[i].walls[j].getWorldMatrix() * layers[i].translate  * layers[i].rotations[j] * layers[i].spin * layers[i].diagonal * mView*mProj;
+	//		mfxWVPVar->SetMatrix((float*)&mWVP);
+	//		layers[i].walls[j].setMTech(mTech);
+	//		layers[i].walls[j].draw();
+	//	}
+	//}
+
+	// DEBUG: draw the surfrev-generated mesh object created earlier
+	mWVP = mesh.getWorldMatrix() * mView * mProj;
+	mfxWVPVar->SetMatrix((float*)&mWVP);
+	mesh.setMTech(mTech);
+	mesh.draw();
 	
 	//bullet
 	bulletObject.setMTech(mTech);
@@ -417,7 +418,7 @@ void CrateApp::drawScene()
 	
 	//laser
 	//TRACKING:
-	if(abs(laserTheta-mTheta)>.01)
+	/*if(abs(laserTheta-mTheta)>.01)
 	{
 		if((laserTheta-mTheta > -PI && laserTheta-mTheta < 0) || (laserTheta-mTheta > PI)) laserTheta += .0015f;
 		else laserTheta -= .0015f;
@@ -435,7 +436,7 @@ void CrateApp::drawScene()
 	mWVP = laser.getWorldMatrix() *translateOut * rotatePhi * rotateTheta * mView*mProj;
 	mfxWVPVar->SetMatrix((float*)&mWVP);
 	laser.setMTech(mTech);
-	laser.draw();
+	laser.draw();*/
 
 	std::wostringstream outs;   
 	outs.precision(2);
@@ -502,13 +503,13 @@ std::vector<Vector3> generateSurfrev2D(float degreesY)
 {
 	// Note: the number of points generated will be 2*NUM_SLICES + 2
 	// (once on the inside, once on the outside, and two to cap it off at the end)
-	const int NUM_SLICES = 10;
+	const int NUM_SLICES = 50;
 
 	std::vector<Vector3> points;
 
 	// Define the "bottom" of the polygon
 	points.push_back(Vector3(1,0,0));
-	points.push_back(Vector3(0.9,0,0));
+	points.push_back(Vector3(1,0,0));
 	
 	float sliceSize = degreesY / NUM_SLICES;
 	for(float theta = 0.0f; theta < degreesY; theta += sliceSize)
@@ -547,7 +548,7 @@ std::vector<Vector3> generateSurfrev2D(float degreesY)
 
 void generateSurfrev3D(std::vector<Vector3> polygon, float degreesZ, Mesh &mesh)
 {
-	const int NUM_SLICES = 10;
+	const int NUM_SLICES = 50;
 
 	float sliceSize = degreesZ / NUM_SLICES;
 	for(float theta = 0.0f; theta < degreesZ; theta += sliceSize)
