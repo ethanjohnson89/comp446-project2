@@ -202,7 +202,11 @@ void CrateApp::initApp()
 
 	boss.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1);
 	health[0].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(-10,0,10), 10,1);
+
 	laser.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2);
+	laser.setOverrideColorVar(mfxOverrideColorFlag);
+	laser.setObjectColorVar(mfxObjectColor);
+	laser.setColor(D3DXCOLOR(1, 0, 0, 1));
 	laser.setInActive();
 
 	//background init
