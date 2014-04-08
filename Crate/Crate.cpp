@@ -57,6 +57,10 @@ private:
 	GameObject background[6];
 
 	ID3D10ShaderResourceView* mBackgroundRV;
+	ID3D10ShaderResourceView* mIntroRV;
+	ID3D10ShaderResourceView* mRestartRV;
+	ID3D10ShaderResourceView* mNextLevelRV;
+	ID3D10ShaderResourceView* mEndRV;
 
 	Bullet bulletObject;
 
@@ -192,6 +196,18 @@ void CrateApp::initApp()
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"heic1215b.jpg", 0, 0, &mBackgroundRV, 0 ));
 
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"INTRO.png", 0, 0, &mIntroRV, 0 ));
+
+	//HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+	//	L"", 0, 0, &mRestartRV, 0 ));
+
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"transition.png", 0, 0, &mNextLevelRV, 0 ));
+
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"endscreen.png", 0, 0, &mEndRV, 0 ));
+	
 	mParallelLight.dir      = D3DXVECTOR3(0.57735f, -0.57735f, 0.57735f);
 	mParallelLight.ambient  = D3DXCOLOR(0.4f, 0.4f, 0.4f, 1.0f);
 	mParallelLight.diffuse  = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
