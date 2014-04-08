@@ -16,8 +16,8 @@ Global Settings
     Header File = sounds.h;
     Exclude Category Names = 0;
     Exclude Variable Names = 0;
-    Last Modified Low = 796028329;
-    Last Modified High = 30364441;
+    Last Modified Low = 3386456024;
+    Last Modified High = 30364445;
 
     Category
     {
@@ -229,6 +229,8 @@ Wave Bank
     Xbox Bank Last Modified High = 0;
     PC Bank Last Modified Low = 796098336;
     PC Bank Last Modified High = 30364441;
+    Header Last Modified Low = 0;
+    Header Last Modified High = 0;
     Bank Last Revised Low = 647033431;
     Bank Last Revised High = 30364441;
 
@@ -378,8 +380,8 @@ Sound Bank
     Windows File = Win\Sound Bank.xsb;
     Xbox Bank Path Edited = 0;
     Windows Bank Path Edited = 0;
-    Bank Last Modified Low = 974746199;
-    Bank Last Modified High = 30364441;
+    Bank Last Modified Low = 3386556034;
+    Bank Last Modified High = 30364445;
     Header Last Modified High = 0;
     Header Last Modified Low = 0;
 
@@ -527,7 +529,7 @@ Sound Bank
     Sound
     {
         Name = laser;
-        Volume = -1200;
+        Volume = 0;
         Pitch = 0;
         Priority = 0;
 

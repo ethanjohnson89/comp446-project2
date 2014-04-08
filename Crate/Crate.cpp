@@ -389,6 +389,7 @@ void CrateApp::updateScene(float dt)
 				state = start;
 				enterPressedLastFrame = true;
 				//PLAY INTRO MUSIC
+				audio->playCue(INTROMUSIC);
 			}
 			else if(!GetAsyncKeyState(VK_RETURN)) enterPressedLastFrame = false;
 
@@ -404,8 +405,11 @@ void CrateApp::updateScene(float dt)
 			else if(!GetAsyncKeyState(VK_RETURN)) enterPressedLastFrame = false;*/
 
 			introMusicTimer += dt;
-			if(introMusicTimer > 1)
+			if(introMusicTimer > 13)
+			{
+				audio->playCue(LASER);
 				state = game;
+			}
 
 			break;
 		}
@@ -431,6 +435,7 @@ void CrateApp::updateScene(float dt)
 				//}
 				//	}
 				bulletObject.shoot(mEyePos/2,2*Vector3(-mEyePos), mTheta, mPhi);
+				audio->playCue(BULLETSHOOT);
 			}
 
 			if(GetAsyncKeyState(' ') & 0x8000) spacePressedLastFrame = true;
@@ -474,9 +479,14 @@ void CrateApp::updateScene(float dt)
 			{
 				bossHealth--;
 				if(bossHealth == 0)
+				{
 					mesh.setInActive();
-				bulletObject.setInActive();
-				//PLAY SOUND
+					bulletObject.setInActive();
+					//PLAY SOUND
+					audio->stopCue(LASER);
+					audio->playCue(BOSSDYING);
+				}
+
 				bossDead = true;
 			}
 			//WIN 
@@ -494,6 +504,8 @@ void CrateApp::updateScene(float dt)
 					else if(level==2)
 					{
 						reinitialize();
+						audio->stopCue(LASER);
+						audio->playCue(ENDMUSIC);
 						state = end;
 					}
 				}
@@ -504,7 +516,11 @@ void CrateApp::updateScene(float dt)
 				playerHealth -= dt*33;
 			else playerHealth += dt*33;
 			if(playerHealth > 100) playerHealth = 100;
-			if(playerHealth <= 0) state = restart;
+			if(playerHealth <= 0)
+			{
+				state = restart;
+				audio->stopCue(LASER);
+			}
 
 			//BULLET COLLISION ON WALLS
 			if(bulletObject.getActiveState())
@@ -517,6 +533,7 @@ void CrateApp::updateScene(float dt)
 						{
 							layers[j].walls[i].setInActive();
 							bulletObject.setInActive();
+							audio->playCue(WALLHIT);
 						}
 					}
 				}
@@ -603,6 +620,7 @@ void CrateApp::updateScene(float dt)
 			//UPDATE THE RESTART SCREEN CUBE
 			if(GetAsyncKeyState(VK_RETURN) & 0x8000) 
 			{
+				audio->playCue(LASER);
 				state = game;
 				reinitialize();
 			}
@@ -613,6 +631,7 @@ void CrateApp::updateScene(float dt)
 		{
 			if(GetAsyncKeyState(VK_RETURN) & 0x8000) 
 			{
+				audio->playCue(LASER);
 				state = game;
 				reinitialize();
 			}
@@ -623,11 +642,11 @@ void CrateApp::updateScene(float dt)
 			//UPDATE CUBE FOR ENDING SPLASHSCREEN
 			if(!enterPressedLastFrame && GetAsyncKeyState(VK_RETURN) & 0x8000) 
 			{
+				audio->stopCue(ENDMUSIC);
 				state = intro;
 				enterPressedLastFrame = true;
 			}
 			else if(!GetAsyncKeyState(VK_RETURN)) enterPressedLastFrame = false;
-			//PLAY SOUND
 			break;
 		}
 	}
