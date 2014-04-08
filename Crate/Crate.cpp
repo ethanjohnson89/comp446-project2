@@ -212,27 +212,27 @@ void CrateApp::initApp()
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"introintro.png", 0, 0, &mIntroIntroRV, 0 ));
 
-	introIntroSplashscreen.init(md3dDevice, 8.5f, mIntroIntroRV, mSpecMapRV, mTech);
+	introIntroSplashscreen.init(md3dDevice, 7.75f, mIntroIntroRV, mSpecMapRV, mTech);
 
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"INTRO.png", 0, 0, &mIntroRV, 0 ));
 
-	introSplashscreen.init(md3dDevice, 8.5f, mIntroRV, mSpecMapRV, mTech);
+	introSplashscreen.init(md3dDevice, 7.75f, mIntroRV, mSpecMapRV, mTech);
 
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"retry.png", 0, 0, &mRestartRV, 0 ));
 
-	restartSplashscreen.init(md3dDevice, 8.5f, mRestartRV, mSpecMapRV, mTech);
+	restartSplashscreen.init(md3dDevice, 7.75f, mRestartRV, mSpecMapRV, mTech);
 
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"transition.png", 0, 0, &mNextLevelRV, 0 ));
 
-	nextLevelSplashscreen.init(md3dDevice, 8.5f, mNextLevelRV, mSpecMapRV, mTech);
+	nextLevelSplashscreen.init(md3dDevice, 7.75f, mNextLevelRV, mSpecMapRV, mTech);
 
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"endscreen.png", 0, 0, &mEndRV, 0 ));
 
-	endSplashscreen.init(md3dDevice, 8.5f, mEndRV, mSpecMapRV, mTech);
+	endSplashscreen.init(md3dDevice, 7.75f, mEndRV, mSpecMapRV, mTech);
 
 	mParallelLight.dir      = D3DXVECTOR3(0.57735f, -0.57735f, 0.57735f);
 	mParallelLight.ambient  = D3DXCOLOR(0.4f, 0.4f, 0.4f, 1.0f);
@@ -315,7 +315,7 @@ void CrateApp::updateScene(float dt)
 	for(int i=0; i<6; i++) {
 		background[i].update(dt);
 	}
-	
+
 	switch(state)
 	{
 	case intro:
@@ -329,7 +329,7 @@ void CrateApp::updateScene(float dt)
 	case start:
 		{
 			//UPDATE THE INTRO SPLASHSCREEN CUBE
-			if(GetAsyncKeyState('A') & 0x8000) 
+			if(GetAsyncKeyState(VK_RETURN) & 0x8000) 
 			{
 				state = game;
 			}
@@ -340,14 +340,6 @@ void CrateApp::updateScene(float dt)
 		{
 			// DEBUG
 			mesh.update(dt);
-
-			// Update angles based on input to orbit camera around scene.
-			if(GetAsyncKeyState('A') & 0x8000)	mTheta += 3.0f*dt;
-			if(GetAsyncKeyState('D') & 0x8000)	mTheta -= 3.0f*dt;
-			if(GetAsyncKeyState('W') & 0x8000)	mPhi -= 3.0f*dt;
-			if(GetAsyncKeyState('S') & 0x8000)	mPhi += 3.0f*dt;
-			if(GetAsyncKeyState('Z') & 0x8000)	mRadius -= 15.0f*dt;
-			if(GetAsyncKeyState('X') & 0x8000)	mRadius += 15.0f*dt;
 
 			for(int i=0; i<3; i++)
 				health[0].update(dt);
@@ -505,26 +497,24 @@ void CrateApp::updateScene(float dt)
 				}
 			}
 
+			if( laserTheta < 0.01f )	laserTheta = 2*PI-.02f;
+			if( laserTheta > 2*PI-0.01f)	laserTheta = .02f;
+
+			
+			// Update angles based on input to orbit camera around scene.
+			if(GetAsyncKeyState('A') & 0x8000)	mTheta += 3.0f*dt;
+			if(GetAsyncKeyState('D') & 0x8000)	mTheta -= 3.0f*dt;
+			if(GetAsyncKeyState('W') & 0x8000)	mPhi -= 3.0f*dt;
+			if(GetAsyncKeyState('S') & 0x8000)	mPhi += 3.0f*dt;
+			if(GetAsyncKeyState('Z') & 0x8000)	mRadius -= 15.0f*dt;
+			if(GetAsyncKeyState('X') & 0x8000)	mRadius += 15.0f*dt;
+
 			// Restrict the angle mPhi.
 			if( mPhi < 0.1f )	mPhi = 0.1f;
 			if( mPhi > PI-0.1f)	mPhi = PI-0.1f;
 
 			if( mTheta < 0.01f )	mTheta = 2*PI-.02f;
 			if( mTheta > 2*PI-0.01f)	mTheta = .02f;
-
-			if( laserTheta < 0.01f )	laserTheta = 2*PI-.02f;
-			if( laserTheta > 2*PI-0.01f)	laserTheta = .02f;
-
-			// Convert Spherical to Cartesian coordinates: mPhi measured from +y
-			// and mTheta measured counterclockwise from -z.
-			mEyePos.x =  mRadius*sinf(mPhi)*sinf(-mTheta);
-			mEyePos.z = -mRadius*sinf(mPhi)*cosf(-mTheta);
-			mEyePos.y =  mRadius*cosf(mPhi);
-
-			// Build the view matrix.
-			D3DXVECTOR3 target(0.0f, 0.0f, 0.0f);
-			D3DXVECTOR3 up(0.0f, 1.0f, 0.0f);
-			D3DXMatrixLookAtLH(&mView, &mEyePos, &target, &up);
 
 			break;
 		}
@@ -560,6 +550,17 @@ void CrateApp::updateScene(float dt)
 			break;
 		}
 	}
+
+	// Convert Spherical to Cartesian coordinates: mPhi measured from +y
+	// and mTheta measured counterclockwise from -z.
+	mEyePos.x =  mRadius*sinf(mPhi)*sinf(-mTheta);
+	mEyePos.z = -mRadius*sinf(mPhi)*cosf(-mTheta);
+	mEyePos.y =  mRadius*cosf(mPhi);
+	
+	// Build the view matrix.
+	D3DXVECTOR3 target(0.0f, 0.0f, 0.0f);
+	D3DXVECTOR3 up(0.0f, 1.0f, 0.0f);
+	D3DXMatrixLookAtLH(&mView, &mEyePos, &target, &up);
 }
 
 void CrateApp::regenerateWalls(float dt)
