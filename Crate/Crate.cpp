@@ -44,7 +44,7 @@ public:
 private:
 	void buildFX();
 	void buildVertexLayouts();
- 
+
 private:
 
 	Box mCrateMesh;
@@ -57,16 +57,22 @@ private:
 
 	GameObject background[6];
 
+	Splashscreen introIntroSplashscreen;
+	Splashscreen introSplashscreen;
+	Splashscreen restartSplashscreen;
+	Splashscreen nextLevelSplashscreen;
+	Splashscreen endSplashscreen;
+
+	//ID3D10ShaderResourceView* mDiffuseMapRV_IntroScreen;
+
 	ID3D10ShaderResourceView* mBackgroundRV;
+	ID3D10ShaderResourceView* mIntroIntroRV;
 	ID3D10ShaderResourceView* mIntroRV;
 	ID3D10ShaderResourceView* mRestartRV;
 	ID3D10ShaderResourceView* mNextLevelRV;
 	ID3D10ShaderResourceView* mEndRV;
 
 	Bullet bulletObject;
-
-	Splashscreen introSplashscreen;
-	ID3D10ShaderResourceView* mDiffuseMapRV_IntroScreen;
 
 	Light mParallelLight;
 
@@ -100,7 +106,7 @@ private:
 
 	float laserTheta;
 	float laserPhi;
-	
+
 	float spinAmount;
 
 	std::wstring stats;
@@ -125,7 +131,7 @@ private:
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
-				   PSTR cmdLine, int showCmd)
+	PSTR cmdLine, int showCmd)
 {
 	// Enable run-time memory check for debug builds.
 #if defined(DEBUG) | defined(_DEBUG)
@@ -134,18 +140,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 
 
 	CrateApp theApp(hInstance);
-	
+
 	theApp.initApp();
 
 	return theApp.run();
 }
 
 CrateApp::CrateApp(HINSTANCE hInstance)
-: D3DApp(hInstance), mFX(0), mTech(0), mfxWVPVar(0), mfxWorldVar(0), mfxEyePosVar(0),
-  mfxLightVar(0), mfxDiffuseMapVar(0), mfxSpecMapVar(0), mfxTexMtxVar(0), 
-  mVertexLayout(0), mDiffuseMapRV(0), mSpecMapRV(0), mEyePos(0.0f, 0.0f, 0.0f), 
-  mRadius(25.0f), mTheta(0.0f), mPhi(PI/2), spinAmount(0), fireLaser(false), laserTimer(0), bossHealth(3),
-  spacePressedLastFrame(false), level(1), bossDyingTimer(0), bossDead(false)
+	: D3DApp(hInstance), mFX(0), mTech(0), mfxWVPVar(0), mfxWorldVar(0), mfxEyePosVar(0),
+	mfxLightVar(0), mfxDiffuseMapVar(0), mfxSpecMapVar(0), mfxTexMtxVar(0), 
+	mVertexLayout(0), mDiffuseMapRV(0), mSpecMapRV(0), mEyePos(0.0f, 0.0f, 0.0f), 
+	mRadius(25.0f), mTheta(0.0f), mPhi(PI/2), spinAmount(0), fireLaser(false), laserTimer(0), bossHealth(3),
+	spacePressedLastFrame(false), level(1), bossDyingTimer(0), bossDead(false)
 {
 	D3DXMatrixIdentity(&mCrateWorld);
 	D3DXMatrixIdentity(&mView);
@@ -155,7 +161,7 @@ CrateApp::CrateApp(HINSTANCE hInstance)
 	laserTheta = mTheta;
 	laserPhi = mPhi;
 
-	state = start;
+	state = intro;
 }
 
 CrateApp::~CrateApp()
@@ -179,7 +185,7 @@ void CrateApp::initApp()
 	D3DApp::initApp();
 
 	mClearColor = D3DXCOLOR(0.9f, 0.9f, 0.9f, 1.0f);
-	
+
 	buildFX();
 	buildVertexLayouts();
 
@@ -188,7 +194,7 @@ void CrateApp::initApp()
 	mesh.setOverrideColorVar(mfxOverrideColorFlag);
 	mesh.setObjectColorVar(mfxObjectColor);
 	mesh.setColor(D3DXCOLOR(1, 0, 0, 1));
-	
+
 	mCrateMesh.init(md3dDevice, 1.0f);
 
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice,
@@ -200,23 +206,34 @@ void CrateApp::initApp()
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice,
 		L"heic1215b.jpg", 0, 0, &mBackgroundRV, 0 ));
 
-	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice,
-		L"#selfie.jpg", 0, 0, &mDiffuseMapRV_IntroScreen, 0 ));
-	
-	introSplashscreen.init(md3dDevice, 8.5f, mDiffuseMapRV_IntroScreen, mSpecMapRV, mTech);
+	//HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice,
+	//	L"#selfie.jpg", 0, 0, &mDiffuseMapRV_IntroScreen, 0 ));
+
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"introintro.png", 0, 0, &mIntroIntroRV, 0 ));
+
+	introIntroSplashscreen.init(md3dDevice, 8.5f, mIntroIntroRV, mSpecMapRV, mTech);
 
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"INTRO.png", 0, 0, &mIntroRV, 0 ));
 
-	//HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
-	//	L"", 0, 0, &mRestartRV, 0 ));
+	introSplashscreen.init(md3dDevice, 8.5f, mIntroRV, mSpecMapRV, mTech);
+
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"retry.png", 0, 0, &mRestartRV, 0 ));
+
+	restartSplashscreen.init(md3dDevice, 8.5f, mRestartRV, mSpecMapRV, mTech);
 
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"transition.png", 0, 0, &mNextLevelRV, 0 ));
 
+	nextLevelSplashscreen.init(md3dDevice, 8.5f, mNextLevelRV, mSpecMapRV, mTech);
+
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"endscreen.png", 0, 0, &mEndRV, 0 ));
-	
+
+	endSplashscreen.init(md3dDevice, 8.5f, mEndRV, mSpecMapRV, mTech);
+
 	mParallelLight.dir      = D3DXVECTOR3(0.57735f, -0.57735f, 0.57735f);
 	mParallelLight.ambient  = D3DXCOLOR(0.4f, 0.4f, 0.4f, 1.0f);
 	mParallelLight.diffuse  = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
@@ -241,7 +258,7 @@ void CrateApp::initApp()
 	background[3].init(&bullet, 1.0f, D3DXVECTOR3(0.0f,-100.0f,0.0f), D3DXVECTOR3(0.0f,0.0f,0.0f), 0, 50);
 	background[4].init(&bullet, 1.0f, D3DXVECTOR3(0.0f,0.0f,100.0f), D3DXVECTOR3(0.0f,0.0f,0.0f), 0, 50);
 	background[5].init(&bullet, 1.0f, D3DXVECTOR3(0.0f,0.0f,-100.0f), D3DXVECTOR3(0.0f,0.0f,0.0f), 0, 50);
-	
+
 	//LAYERS:
 	//SPECIFY ROTATION AXIS AND RADIUS IN CONSTRUCTOR
 	layers[0] = Layer(rotationAxis::Y, 5);
@@ -256,13 +273,13 @@ void CrateApp::initApp()
 		layers[2].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.7,1.7,.1);
 		layers[3].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.7,1.7,.1);
 		layers[4].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.7,1.7,.1);
-	/*	layers[0].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.1,1.5,1.5);
+		/*	layers[0].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.1,1.5,1.5);
 		layers[1].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.5,.1,1.5);
 		layers[2].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.5,1.5,.1);
 		layers[3].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.5,1.5,.1);
 		layers[4].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.5,1.5,.1);*/
 	}
-	
+
 
 	//bullet1[0].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.5,.05,.05);
 	//bullet1[1].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.05,.5,.05);
@@ -282,64 +299,63 @@ void CrateApp::onResize()
 
 void CrateApp::reinitialize()
 {
-       spacePressedLastFrame = false;
-		//reset: player health, boss health, phis and thetas of laser and cam, setactive all walls, set their timers all to zero, 
-	   //set laser to inactive and its timer to 0 (actually set mPhi to PI/2)
+	spacePressedLastFrame = false;
+	//reset: player health, boss health, phis and thetas of laser and cam, setactive all walls, set their timers all to zero, 
+	//set laser to inactive and its timer to 0 (actually set mPhi to PI/2)
 
-	   //if(level==1)
+	//if(level==1)
 
-	   //if(level==2)
+	//if(level==2)
 }
 
 void CrateApp::updateScene(float dt)
 {
 	D3DApp::updateScene(dt);
-
+	//update once
+	for(int i=0; i<6; i++) {
+		background[i].update(dt);
+	}
+	
 	switch(state)
 	{
+	case intro:
+		{
+			if(GetAsyncKeyState(VK_RETURN) & 0x8000) 
+			{
+				state = start;
+			}
+			break;
+		}
 	case start:
-
-		//UPDATE THE INTRO SPLASHSCREEN CUBE
-
-		if(GetAsyncKeyState(VK_RETURN) & 0x8000) 
 		{
-			state = game;
+			//UPDATE THE INTRO SPLASHSCREEN CUBE
+			if(GetAsyncKeyState('A') & 0x8000) 
+			{
+				state = game;
+			}
+
+			break;
 		}
-
-		break;
-
-	case restart:
-		//UPDATE THE RESTART SCREEN CUBE
-		if(GetAsyncKeyState(VK_RETURN) & 0x8000) 
-		{
-			state = game;
-			reinitialize();
-		}
-
-		break;
-
 	case game:
-	{
-
-		// DEBUG
-		mesh.update(dt);
-
-		// Update angles based on input to orbit camera around scene.
-		if(GetAsyncKeyState('A') & 0x8000)	mTheta += 3.0f*dt;
-		if(GetAsyncKeyState('D') & 0x8000)	mTheta -= 3.0f*dt;
-		if(GetAsyncKeyState('W') & 0x8000)	mPhi -= 3.0f*dt;
-		if(GetAsyncKeyState('S') & 0x8000)	mPhi += 3.0f*dt;
-		if(GetAsyncKeyState('Z') & 0x8000)	mRadius -= 15.0f*dt;
-		if(GetAsyncKeyState('X') & 0x8000)	mRadius += 15.0f*dt;
-
-		for(int i=0; i<3; i++)
-			health[0].update(dt);
-	
-
-		if(!spacePressedLastFrame && !bulletObject.getActiveState() && GetAsyncKeyState(' ') & 0x8000)
 		{
-			//if(!bullet1[0].getActiveState())
-			//{
+			// DEBUG
+			mesh.update(dt);
+
+			// Update angles based on input to orbit camera around scene.
+			if(GetAsyncKeyState('A') & 0x8000)	mTheta += 3.0f*dt;
+			if(GetAsyncKeyState('D') & 0x8000)	mTheta -= 3.0f*dt;
+			if(GetAsyncKeyState('W') & 0x8000)	mPhi -= 3.0f*dt;
+			if(GetAsyncKeyState('S') & 0x8000)	mPhi += 3.0f*dt;
+			if(GetAsyncKeyState('Z') & 0x8000)	mRadius -= 15.0f*dt;
+			if(GetAsyncKeyState('X') & 0x8000)	mRadius += 15.0f*dt;
+
+			for(int i=0; i<3; i++)
+				health[0].update(dt);
+
+			if(!spacePressedLastFrame && !bulletObject.getActiveState() && GetAsyncKeyState(' ') & 0x8000)
+			{
+				//if(!bullet1[0].getActiveState())
+				//{
 				//for(int i=0; i<3; i++)
 				//{
 				//	bullet1[i].setActive();
@@ -348,193 +364,202 @@ void CrateApp::updateScene(float dt)
 				//	Vector3 t(-mEyePos);
 				//	bullet1[i].setVelocity(t*2);
 				//}
-		//	}
-			bulletObject.shoot(mEyePos/2,2*Vector3(-mEyePos), mTheta, mPhi);
-		}
-
-		if(GetAsyncKeyState(' ') & 0x8000) spacePressedLastFrame = true;
-		else spacePressedLastFrame = false;
-	
-		spinAmount += 1*dt;
-		if (spinAmount*10 > 360)
-			spinAmount = 0;
-
-		//UPDATE LAYERS:
-		for(int i=0; i<5; i++)
-		{
-			//if(level == 1)
-			//	layers[i].updateMatrices(0);
-			//else if(level == 2)
-				layers[i].updateMatrices(spinAmount);
-		}
-		for(int i=0; i<NUM_LAYERS; i++)
-		{
-			for(int j=0; j<NUM_WALLS; j++)
-			{
-				layers[i].walls[j].update(dt);
-				/*if(bulletObject.collided(&layers[i].walls[j]))
-				{
-					layers[i].walls[j].setInActive();
-				}*/
+				//	}
+				bulletObject.shoot(mEyePos/2,2*Vector3(-mEyePos), mTheta, mPhi);
 			}
-		}
 
+			if(GetAsyncKeyState(' ') & 0x8000) spacePressedLastFrame = true;
+			else spacePressedLastFrame = false;
 
-		//for(int i=0; i<3; i++)
-		//	bullet1[i].update(dt);
-		bulletObject.update(dt);
-		boss.update(dt);
+			spinAmount += 1*dt;
+			if (spinAmount*10 > 360)
+				spinAmount = 0;
 
-		//update once
-		for(int i=0; i<6; i++)
-			background[i].update(dt);
+			//UPDATE LAYERS:
+			for(int i=0; i<5; i++)
+			{
+				//if(level == 1)
+				//	layers[i].updateMatrices(0);
+				//else if(level == 2)
+				layers[i].updateMatrices(spinAmount);
+			}
+			for(int i=0; i<NUM_LAYERS; i++)
+			{
+				for(int j=0; j<NUM_WALLS; j++)
+				{
+					layers[i].walls[j].update(dt);
+					/*if(bulletObject.collided(&layers[i].walls[j]))
+					{
+					layers[i].walls[j].setInActive();
+					}*/
+				}
+			}
 
-		//BULLET COLLISION ON BOSS
-		/*if(bulletObject.collided(&boss))
-		{
+			//for(int i=0; i<3; i++)
+			//	bullet1[i].update(dt);
+			bulletObject.update(dt);
+			boss.update(dt);
+
+			//BULLET COLLISION ON BOSS
+			/*if(bulletObject.collided(&boss))
+			{
 			bossHealth--;
 			if(bossHealth == 0) boss.setInActive();*/
-		if(bulletObject.collided(&mesh))
-		{
-			bossHealth--;
-			if(bossHealth == 0)
-				mesh.setInActive();
-			bulletObject.setInActive();
-			//PLAY SOUND
-			bossDead = true;
-		}
-		//WIN 
-		if(bossDead)
-		{
-			bossDyingTimer += dt;
-			if(bossDyingTimer > 3) //CHANGE TO LENGTH OF SOUND
+			if(bulletObject.collided(&mesh))
 			{
-				if(level==1) 
-				{
-					level = 2;
-					state = game;
-					reinitialize();
-				}
-				else if(level==2)
-					state = end;
+				bossHealth--;
+				if(bossHealth == 0)
+					mesh.setInActive();
+				bulletObject.setInActive();
+				//PLAY SOUND
+				bossDead = true;
 			}
-		}
-
-		//LOSE
-		//if(health <= 0) state = restart;
-
-
-		//BULLET COLLISION ON WALLS
-		if(bulletObject.getActiveState())
-		{
-			for(int j=0; j<NUM_LAYERS; j++)
+			//WIN 
+			if(bossDead)
 			{
-				for(int i=0; i<NUM_WALLS; i++)
+				bossDyingTimer += dt;
+				if(bossDyingTimer > 3) //CHANGE TO LENGTH OF SOUND
 				{
-					if(layers[j].walls[i].getActiveState() && ((abs(bulletObject.getTheta() - layers[j].thetas[i]) < .3) || (abs(bulletObject.getTheta() - 2*PI - layers[j].thetas[i]) < .3)) && (abs(bulletObject.getPhi() - layers[j].phis[i]) < .3) && (abs(bulletObject.getDistanceToOrigin() - layers[j].radius) < .5))
+					if(level==1) 
 					{
-						layers[j].walls[i].setInActive();
-						bulletObject.setInActive();
+						level = 2;
+						state = nextLevel;
+						reinitialize();
 					}
+					else if(level==2)
+						state = end;
 				}
 			}
-		}
 
+			//LOSE
+			//if(health <= 0) state = restart;
 
-		//LASER COLLISION ON WALLS
-		if(fireLaser)
-		{
-			for(int j=0; j<NUM_LAYERS; j++)
+			//BULLET COLLISION ON WALLS
+			if(bulletObject.getActiveState())
 			{
-				for(int i=0; i<NUM_WALLS; i++)
+				for(int j=0; j<NUM_LAYERS; j++)
 				{
-					if(layers[j].walls[i].getActiveState())
+					for(int i=0; i<NUM_WALLS; i++)
 					{
-						//if laserTheta is close to either 0 or 2PI, ignore theta comparisons
-						if(laserPhi < .3 || laserPhi > 2.7)
+						if(layers[j].walls[i].getActiveState() && ((abs(bulletObject.getTheta() - layers[j].thetas[i]) < .3) || (abs(bulletObject.getTheta() - 2*PI - layers[j].thetas[i]) < .3)) && (abs(bulletObject.getPhi() - layers[j].phis[i]) < .3) && (abs(bulletObject.getDistanceToOrigin() - layers[j].radius) < .5))
 						{
-							if(abs(laserPhi - layers[j].phis[i]) < .3)
-							{
-								layers[j].walls[i].setInActive();
-							}
-						}
-						else
-						{
-							if((abs(laserTheta - layers[j].thetas[i]) < .3) && (abs(laserPhi - layers[j].phis[i]) < .3))
-							//if(layers[j].walls[i].getActiveState() && ((layers[j].thetas[i] > laserTheta) && (laserTheta + .3 > layers[j].thetas[i])) || ((layers[j].thetas[i] < laserTheta) && (layers[j].thetas[i] + .3 > laserTheta)))
-							{
-								layers[j].walls[i].setInActive();
-							}
+							layers[j].walls[i].setInActive();
+							bulletObject.setInActive();
 						}
 					}
 				}
 			}
-		}
 
-	
-		regenerateWalls(dt);
-
-		//CONTROLS WHEN LASER DISPLAYS
-		if(!fireLaser)
-		{
-			if(rand()%4000==0)
+			//LASER COLLISION ON WALLS
+			if(fireLaser)
 			{
-				fireLaser = true;
-				laser.setActive();
-				laserTheta = (int)(mTheta+PI)%6;
+				for(int j=0; j<NUM_LAYERS; j++)
+				{
+					for(int i=0; i<NUM_WALLS; i++)
+					{
+						if(layers[j].walls[i].getActiveState())
+						{
+							//if laserTheta is close to either 0 or 2PI, ignore theta comparisons
+							if(laserPhi < .3 || laserPhi > 2.7)
+							{
+								if(abs(laserPhi - layers[j].phis[i]) < .3)
+								{
+									layers[j].walls[i].setInActive();
+								}
+							}
+							else
+							{
+								if((abs(laserTheta - layers[j].thetas[i]) < .3) && (abs(laserPhi - layers[j].phis[i]) < .3))
+									//if(layers[j].walls[i].getActiveState() && ((layers[j].thetas[i] > laserTheta) && (laserTheta + .3 > layers[j].thetas[i])) || ((layers[j].thetas[i] < laserTheta) && (layers[j].thetas[i] + .3 > laserTheta)))
+								{
+									layers[j].walls[i].setInActive();
+								}
+							}
+						}
+					}
+				}
 			}
-		}
-		else
-		{
-			laser.update(dt);
-			laserTimer += dt;
-			//at end of timer,set timer back to zero, set laser inactive
-			if(laserTimer > 100)
+
+			regenerateWalls(dt);
+
+			//CONTROLS WHEN LASER DISPLAYS
+			if(!fireLaser)
 			{
-				fireLaser = false;
-				laserTimer = 0;
-				laser.setInActive();
+				if(rand()%4000==0)
+				{
+					fireLaser = true;
+					laser.setActive();
+					laserTheta = (int)(mTheta+PI)%6;
+				}
 			}
+			else
+			{
+				laser.update(dt);
+				laserTimer += dt;
+				//at end of timer,set timer back to zero, set laser inactive
+				if(laserTimer > 100)
+				{
+					fireLaser = false;
+					laserTimer = 0;
+					laser.setInActive();
+				}
+			}
+
+			// Restrict the angle mPhi.
+			if( mPhi < 0.1f )	mPhi = 0.1f;
+			if( mPhi > PI-0.1f)	mPhi = PI-0.1f;
+
+			if( mTheta < 0.01f )	mTheta = 2*PI-.02f;
+			if( mTheta > 2*PI-0.01f)	mTheta = .02f;
+
+			if( laserTheta < 0.01f )	laserTheta = 2*PI-.02f;
+			if( laserTheta > 2*PI-0.01f)	laserTheta = .02f;
+
+			// Convert Spherical to Cartesian coordinates: mPhi measured from +y
+			// and mTheta measured counterclockwise from -z.
+			mEyePos.x =  mRadius*sinf(mPhi)*sinf(-mTheta);
+			mEyePos.z = -mRadius*sinf(mPhi)*cosf(-mTheta);
+			mEyePos.y =  mRadius*cosf(mPhi);
+
+			// Build the view matrix.
+			D3DXVECTOR3 target(0.0f, 0.0f, 0.0f);
+			D3DXVECTOR3 up(0.0f, 1.0f, 0.0f);
+			D3DXMatrixLookAtLH(&mView, &mEyePos, &target, &up);
+
+			break;
 		}
+	case restart:
+		{
+			//UPDATE THE RESTART SCREEN CUBE
+			if(GetAsyncKeyState(VK_RETURN) & 0x8000) 
+			{
+				state = game;
+				reinitialize();
+			}
 
-
-	
-		// Restrict the angle mPhi.
-		if( mPhi < 0.1f )	mPhi = 0.1f;
-		if( mPhi > PI-0.1f)	mPhi = PI-0.1f;
-
-		if( mTheta < 0.01f )	mTheta = 2*PI-.02f;
-		if( mTheta > 2*PI-0.01f)	mTheta = .02f;
-
-		if( laserTheta < 0.01f )	laserTheta = 2*PI-.02f;
-		if( laserTheta > 2*PI-0.01f)	laserTheta = .02f;
-	
-		// Convert Spherical to Cartesian coordinates: mPhi measured from +y
-		// and mTheta measured counterclockwise from -z.
-		mEyePos.x =  mRadius*sinf(mPhi)*sinf(-mTheta);
-		mEyePos.z = -mRadius*sinf(mPhi)*cosf(-mTheta);
-		mEyePos.y =  mRadius*cosf(mPhi);
-	
-		// Build the view matrix.
-		D3DXVECTOR3 target(0.0f, 0.0f, 0.0f);
-		D3DXVECTOR3 up(0.0f, 1.0f, 0.0f);
-		D3DXMatrixLookAtLH(&mView, &mEyePos, &target, &up);
-
-		break;
-	}
-
+			break;
+		}
+	case nextLevel:
+		{
+			if(GetAsyncKeyState(VK_RETURN) & 0x8000) 
+			{
+				state = game;
+				reinitialize();
+			}
+			break;
+		}
 	case end:
-		//UPDATE CUBE FOR ENDING SPLASHSCREEN
-		/*if(GetAsyncKeyState(VK_RETURN) & 0x8000) 
 		{
+			//UPDATE CUBE FOR ENDING SPLASHSCREEN
+			/*if(GetAsyncKeyState(VK_RETURN) & 0x8000) 
+			{
 			reinitialize();
 			state = game;
-		}*/
-		//PLAY SOUND
-		break;
-
+			}*/
+			//PLAY SOUND
+			break;
+		}
 	}
-
 }
 
 void CrateApp::regenerateWalls(float dt)
@@ -566,10 +591,9 @@ void CrateApp::drawScene()
 	md3dDevice->OMSetDepthStencilState(0, 0);
 	float blendFactors[] = {0.0f, 0.0f, 0.0f, 0.0f};
 	md3dDevice->OMSetBlendState(0, blendFactors, 0xffffffff);
-    md3dDevice->IASetInputLayout(mVertexLayout);
-    md3dDevice->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	md3dDevice->IASetInputLayout(mVertexLayout);
+	md3dDevice->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
- 
 	// set constants
 	mfxEyePosVar->SetRawValue(&mEyePos, 0, sizeof(D3DXVECTOR3));
 	mfxLightVar->SetRawValue(&mParallelLight, 0, sizeof(Light));
@@ -578,20 +602,20 @@ void CrateApp::drawScene()
 	mfxWorldVar->SetMatrix((float*)&mCrateWorld);
 	mfxDiffuseMapVar->SetResource(mDiffuseMapRV);
 	mfxSpecMapVar->SetResource(mSpecMapRV);
- 
+
 	// Don't transform texture coordinates, so just use identity transformation.
 	D3DXMATRIX texMtx;
 	D3DXMatrixIdentity(&texMtx);
 	mfxTexMtxVar->SetMatrix((float*)&texMtx);
 
-  //  D3D10_TECHNIQUE_DESC techDesc;
-  //  mTech->GetDesc( &techDesc );
-  //  for(UINT p = 0; p < techDesc.Passes; ++p)
-  //  {
-  //      mTech->GetPassByIndex( p )->Apply(0);
-  //      
-		//mCrateMesh.draw();
-  //  }
+	//  D3D10_TECHNIQUE_DESC techDesc;
+	//  mTech->GetDesc( &techDesc );
+	//  for(UINT p = 0; p < techDesc.Passes; ++p)
+	//  {
+	//      mTech->GetPassByIndex( p )->Apply(0);
+	//      
+	//mCrateMesh.draw();
+	//  }
 
 	//BACKGROUND
 	mfxDiffuseMapVar->SetResource(mBackgroundRV);
@@ -604,25 +628,25 @@ void CrateApp::drawScene()
 	}
 
 	switch(state) {
-
+	case intro:
+		{
+			mWVP = mCrateWorld*mView*mProj;
+			mfxWVPVar->SetMatrix((float*)&mWVP);
+			mfxDiffuseMapVar->SetResource(introIntroSplashscreen.getDiffuseMapRV());
+			mfxSpecMapVar->SetResource(introIntroSplashscreen.getSpecMapRV());
+			introIntroSplashscreen.draw();
+			break;
+		}
 	case start:
 		{
-			//DRAW INTRO SCREEN CUBE
-
 			//Splashscreen
 			mWVP = mCrateWorld*mView*mProj;
 			mfxWVPVar->SetMatrix((float*)&mWVP);
 			mfxDiffuseMapVar->SetResource(introSplashscreen.getDiffuseMapRV());
 			mfxSpecMapVar->SetResource(introSplashscreen.getSpecMapRV());
-			D3D10_TECHNIQUE_DESC techDesc;
-			mTech->GetDesc( &techDesc );
-			for(UINT p = 0; p < techDesc.Passes; ++p)
-			{
-				mTech->GetPassByIndex( p )->Apply(0);
-				introSplashscreen.draw();
-			}
+			introSplashscreen.draw();
+			break;
 		}
-
 	case game:
 		{
 			//BOSS
@@ -638,8 +662,6 @@ void CrateApp::drawScene()
 			//Matrix s;
 			//RotateY(&s, PI/4);
 
-
-
 			//HEALTH BAR:
 			Matrix rphi, rtheta;
 			RotateX(&rphi, -mPhi);
@@ -647,14 +669,11 @@ void CrateApp::drawScene()
 
 			/*for(int i=0; i<1; i++)
 			{
-				mWVP = health[i].getWorldMatrix() * rphi * rtheta * mView*mProj;
-				mfxWVPVar->SetMatrix((float*)&mWVP);
-				health[i].setMTech(mTech);
-				health[i].draw();
+			mWVP = health[i].getWorldMatrix() * rphi * rtheta * mView*mProj;
+			mfxWVPVar->SetMatrix((float*)&mWVP);
+			health[i].setMTech(mTech);
+			health[i].draw();
 			}*/
-
-
-	
 
 			Matrix s;
 			RotateY(&s, PI/4);
@@ -685,11 +704,11 @@ void CrateApp::drawScene()
 				}
 			}
 
-	
+
 			//bullet
 			bulletObject.setMTech(mTech);
 			bulletObject.draw(mfxWVPVar, mView*mProj);
-	
+
 			//laser
 			//TRACKING:
 			if(abs(laserTheta-mTheta)>.01)
@@ -721,30 +740,41 @@ void CrateApp::drawScene()
 			RECT R = {5, 5, 0, 0};
 			mFont->DrawText(0, stats.c_str(), -1, &R, DT_NOCLIP, BLACK);
 
-			mSwapChain->Present(0, 0);
+			//mSwapChain->Present(0, 0);
+			//state = restart;
+
+			break;
+		}
+	case restart:
+		{
+			mWVP = mCrateWorld*mView*mProj;
+			mfxWVPVar->SetMatrix((float*)&mWVP);
+			mfxDiffuseMapVar->SetResource(restartSplashscreen.getDiffuseMapRV());
+			mfxSpecMapVar->SetResource(restartSplashscreen.getSpecMapRV());
+			restartSplashscreen.draw();
+			break;
+		}
+	case nextLevel:
+		{
+			mWVP = mCrateWorld*mView*mProj;
+			mfxWVPVar->SetMatrix((float*)&mWVP);
+			mfxDiffuseMapVar->SetResource(nextLevelSplashscreen.getDiffuseMapRV());
+			mfxSpecMapVar->SetResource(nextLevelSplashscreen.getSpecMapRV());
+			nextLevelSplashscreen.draw();
+			break;
 		}
 	case end:
-		//DRAW END SCREEN CUBE
-		break;
+		{
+			mWVP = mCrateWorld*mView*mProj;
+			mfxWVPVar->SetMatrix((float*)&mWVP);
+			mfxDiffuseMapVar->SetResource(endSplashscreen.getDiffuseMapRV());
+			mfxSpecMapVar->SetResource(endSplashscreen.getSpecMapRV());
+			endSplashscreen.draw();
+			break;
+		}
 	}
 
-	Matrix translateOut;
-	Matrix rotatePhi, rotateTheta;
-	RotateX(&rotatePhi, -laserPhi+PI/2);
-	RotateY(&rotateTheta, -laserTheta);
-	Translate(&translateOut, 0, 0, -mRadius*2);
-	mWVP = laser.getWorldMatrix() *translateOut * rotatePhi * rotateTheta * mView*mProj;
-	mfxWVPVar->SetMatrix((float*)&mWVP);
-	laser.setMTech(mTech);
-	laser.draw();
 
-	std::wostringstream outs;   
-	outs.precision(2);
-	outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n laser phi: " << laserPhi << "\nlaser theta: " << laserTheta << "\nlaserTimer: " << laserTimer;
-	stats = outs.str();
-	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
-	RECT R = {5, 5, 0, 0};
-	mFont->DrawText(0, stats.c_str(), -1, &R, DT_NOCLIP, BLACK);
 
 	mSwapChain->Present(0, 0);
 }
@@ -753,10 +783,10 @@ void CrateApp::buildFX()
 {
 	DWORD shaderFlags = D3D10_SHADER_ENABLE_STRICTNESS;
 #if defined( DEBUG ) || defined( _DEBUG )
-    shaderFlags |= D3D10_SHADER_DEBUG;
+	shaderFlags |= D3D10_SHADER_DEBUG;
 	//shaderFlags |= D3D10_SHADER_SKIP_OPTIMIZATION;
 #endif
-  
+
 	ID3D10Blob* compilationErrors = 0;
 	HRESULT hr = 0;
 	hr = D3DX10CreateEffectFromFile(L"tex.fx", 0, 0, 
@@ -772,7 +802,7 @@ void CrateApp::buildFX()
 	} 
 
 	mTech = mFX->GetTechniqueByName("TexTech");
-	
+
 	mfxWVPVar        = mFX->GetVariableByName("gWVP")->AsMatrix();
 	mfxWorldVar      = mFX->GetVariableByName("gWorld")->AsMatrix();
 	mfxEyePosVar     = mFX->GetVariableByName("gEyePosW");
@@ -795,9 +825,9 @@ void CrateApp::buildVertexLayouts()
 	};
 
 	// Create the input layout
-    D3D10_PASS_DESC PassDesc;
-    mTech->GetPassByIndex(0)->GetDesc(&PassDesc);
-    HR(md3dDevice->CreateInputLayout(vertexDesc, 3, PassDesc.pIAInputSignature,
+	D3D10_PASS_DESC PassDesc;
+	mTech->GetPassByIndex(0)->GetDesc(&PassDesc);
+	HR(md3dDevice->CreateInputLayout(vertexDesc, 3, PassDesc.pIAInputSignature,
 		PassDesc.IAInputSignatureSize, &mVertexLayout));
 }
 
@@ -812,7 +842,7 @@ std::vector<Vector3> generateSurfrev2D(float degreesY)
 	// Define the "bottom" of the polygon
 	points.push_back(Vector3(1,0,0));
 	points.push_back(Vector3(1,0,0));
-	
+
 	float sliceSize = degreesY / NUM_SLICES;
 	for(float theta = 0.0f; theta < degreesY; theta += sliceSize)
 	{
@@ -894,7 +924,7 @@ void generateSurfrev3D(std::vector<Vector3> polygon, float degreesZ, Mesh &mesh)
 			line2 = end[i+1] - end[i];
 			VectorCross(&faceNormal, &line1, &line2);
 			Normalize(&faceNormal, &faceNormal);
-			
+
 			// Second triangle
 			face.p0 = Vertex(end[i+1], faceNormal, 0, 1);
 			face.p1 = Vertex(end[i], faceNormal, 0, 1);

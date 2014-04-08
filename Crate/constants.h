@@ -24,6 +24,6 @@
 #define NUM_WALLS 16
 #define NUM_LAYERS 5
 
-enum State {start, game, end, restart};
+enum State {intro, start, game, end, restart, nextLevel};
 
 #endif
