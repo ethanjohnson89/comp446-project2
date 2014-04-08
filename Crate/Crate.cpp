@@ -14,151 +14,17 @@
 #include "Box.h"
 #include "GameObject.h"
 #include "Bullet.h"
+#include "Layer.h"
+#include "Mesh.h"
+#include "constants.h"
 #include <sstream>
+#include <string>
+#include <vector>
+#include <fstream>
 
-enum rotationAxis { X, Y, Z, YZ, ZY };
-
-struct Layer {
-	rotationAxis axis;
-	int radius;
-	Matrix rotations[NUM_WALLS];
-	Matrix spin, translate, diagonal;
-	GameObject walls[NUM_WALLS];
-	float thetas[NUM_WALLS];
-	float phis[NUM_WALLS];
-	float startingTheta[NUM_WALLS];
-	float startingPhi[NUM_WALLS];
-	float regenTime[NUM_WALLS];
-	
-	Layer::Layer(rotationAxis a, int r) {
-		radius = r; 
-		axis = a;
-		for(int i=0; i<NUM_WALLS; i++)
-			regenTime[i] = 0;
-
-		if(axis==Y)
-		{
-			for(int i=0; i<NUM_WALLS; i++)
-			{
-				startingTheta[i] = i*2*PI/NUM_WALLS - (PI/2); // THAT PI/2 MAKES UP FOR DIFFERENCE IN STARTING THETAS FOR WALLS AND CAMERA
-				startingPhi[i] = PI/2;
-			}
-		}
-		if(axis==Z)
-		{
-			for(int i=0; i<NUM_WALLS; i++)
-			{
-				//startingTheta[i] = i*2*PI/NUM_WALLS; 
-				startingPhi[i] = i*2*PI/NUM_WALLS;
-			}
-		}
-		if(axis==X || axis==YZ || axis==ZY)
-		{
-			for(int i=0; i<NUM_WALLS; i++)
-			{
-				//startingTheta[i] = i*2*PI/NUM_WALLS + PI; 
-				//startingPhi[i] = i*2*PI/NUM_WALLS + PI/2; 
-				float t = i*2*PI/NUM_WALLS + PI/2;
-				int temp = static_cast<int>(t/(2*PI));
-				startingPhi[i] = t - static_cast<float>(temp)*(2*PI);
-				//phis[i] = startingPhi[i];
-			}
-		}
-		/*if(axis==YZ || axis==ZY)
-		{
-			for(int i=0; i<NUM_WALLS; i++)
-			{
-				startingPhi[i] = i*2*PI/NUM_WALLS;
-			}
-		}
-		*/
-	}
-	Layer::Layer() {}
-
-	void updateMatrices(float spinAmount)
-	{
-		if(axis==Y)
-		{
-			Translate(&translate,radius,0,0); //CAN PUT SOMETHING LIKE radius*5*spinAmount/36.0f TO HAVE IT GROW IN AND OUT
-			RotateY(&spin, ToRadian(spinAmount*50));
-			for(int i=0; i<NUM_WALLS; i++)
-			{
-				RotateY(&rotations[i], i*2*PI/NUM_WALLS);
-				//thetas[i] = 2*PI*spinAmount/(6*36);
-				float t = ToRadian(spinAmount*50) + startingTheta[i];
-				int temp = static_cast<int>(t/(2*PI));
-				thetas[i] = t - static_cast<float>(temp)*(2*PI);
-				phis[i] = startingPhi[i];
-				//if(thetas[i] > 2*PI) thetas[i] = 0;
-			}
-		}
-		if(axis==Z)
-		{
-			Translate(&translate,0,radius,0);
-			RotateZ(&spin, ToRadian(spinAmount*50));
-			for(int i=0; i<NUM_WALLS; i++)
-			{
-				RotateZ(&rotations[i], i*2*PI/NUM_WALLS);
-				float t = ToRadian(spinAmount*50) + startingPhi[i];
-				int temp = static_cast<int>(t/(2*PI));
-				float tempPhi = t - static_cast<float>(temp)*(2*PI);
-				if(tempPhi > PI)
-				{
-					phis[i] = 2*PI - tempPhi; //IF ON RIGHT SIDE GOING BACK UP
-					thetas[i] = 3*PI/2;
-				}
-				else 
-				{
-					phis[i] = tempPhi;
-					thetas[i] = PI/2;
-				}
-				//phis[i] = startingPhi[i];
-			}
-		}
-		if(axis==X || axis==ZY || axis==YZ)
-		{
-			Translate(&translate,0,0,radius);
-			RotateX(&spin, ToRadian(spinAmount*50));
-			for(int i=0; i<NUM_WALLS; i++)
-			{
-				RotateX(&rotations[i], i*2*PI/NUM_WALLS);
-				float t = ToRadian(spinAmount*50) + startingPhi[i];
-				int temp = static_cast<int>(t/(2*PI));
-				float tempPhi = t - static_cast<float>(temp)*(2*PI);
-				if(tempPhi > PI)
-				{
-					phis[i] = 2*PI - tempPhi; 
-					thetas[i] = 0;
-				}
-				else 
-				{
-					phis[i] = tempPhi;
-					thetas[i] = PI;
-				}
-			}
-		}
-		if(axis==YZ)
-		{
-			RotateY(&diagonal, PI/4.0f);
-			for(int i=0; i<NUM_WALLS; i++)
-			{
-				thetas[i] += PI/4;
-			}
-
-		}
-		else if(axis==ZY)
-		{
-			RotateY(&diagonal, -PI/4.0f);
-			for(int i=0; i<NUM_WALLS; i++)
-			{
-				
-				float t = thetas[i] + 7*PI/4;
-				int temp = static_cast<int>(t/(2*PI));
-				thetas[i] = t - static_cast<float>(temp)*(2*PI);
-			}
-		}
-	}
-};
+// Utility functions for generating meshes
+std::vector<Vector3> generateSurfrev2D(float degreesY); // generates a x-z cross-sectional "slice" (of specified degrees around the y-axis) of a unit spherical shell (thickness 0.1)
+void generateSurfrev3D(std::vector<Vector3> polygon, float degreesZ, Mesh &mesh); // rotates a polygon in the x-y plane to create a 3-D mesh
 
 class CrateApp : public D3DApp
 {
@@ -231,6 +97,9 @@ private:
 	bool spacePressedLastFrame;
 
 	int level;
+
+	// DEBUG
+	Mesh mesh;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
@@ -278,12 +147,19 @@ CrateApp::~CrateApp()
 
 void CrateApp::initApp()
 {
+	// DEBUG
+	std::vector<Vector3> output = generateSurfrev2D(180);
+	generateSurfrev3D(output, 360, mesh);
+
 	D3DApp::initApp();
 
 	mClearColor = D3DXCOLOR(0.9f, 0.9f, 0.9f, 1.0f);
 	
 	buildFX();
 	buildVertexLayouts();
+
+	// DEBUG
+	mesh.init(md3dDevice, 2.0, Vector3(1,0,0), Vector3(0,0,0), 0, 2);
 	
 	mCrateMesh.init(md3dDevice, 1.0f);
 
@@ -349,6 +225,9 @@ void CrateApp::updateScene(float dt)
 {
 	D3DApp::updateScene(dt);
 
+	// DEBUG
+	mesh.update(dt);
+
 	// Update angles based on input to orbit camera around scene.
 	if(GetAsyncKeyState('A') & 0x8000)	mTheta += 3.0f*dt;
 	if(GetAsyncKeyState('D') & 0x8000)	mTheta -= 3.0f*dt;
@@ -411,12 +290,15 @@ void CrateApp::updateScene(float dt)
 	boss.update(dt);
 
 	//BULLET COLLISION ON BOSS
-	if(bulletObject.collided(&boss))
+	/*if(bulletObject.collided(&boss))
 	{
 		bossHealth--;
-		if(bossHealth == 0) boss.setInActive();
-		//for(int i=0; i<3; i++)
-		//	bullet1[i].setInActive();
+		if(bossHealth == 0) boss.setInActive();*/
+	if(bulletObject.collided(&mesh))
+	{
+		bossHealth--;
+		if(bossHealth == 0)
+			mesh.setInActive();
 		bulletObject.setInActive();
 	}
 
@@ -576,10 +458,14 @@ void CrateApp::drawScene()
     }
 
 	//BOSS
-	mWVP = boss.getWorldMatrix() *mView*mProj;
+	/*mWVP = boss.getWorldMatrix() *mView*mProj;
 	mfxWVPVar->SetMatrix((float*)&mWVP);
 	boss.setMTech(mTech);
-	boss.draw();
+	boss.draw();*/
+	mWVP = mesh.getWorldMatrix() * mView * mProj;
+	mfxWVPVar->SetMatrix((float*)&mWVP);
+	mesh.setMTech(mTech);
+	mesh.draw();
 
 	//Matrix s;
 	//RotateY(&s, PI/4);
@@ -713,4 +599,138 @@ void CrateApp::buildVertexLayouts()
 		PassDesc.IAInputSignatureSize, &mVertexLayout));
 }
 
- 
+std::vector<Vector3> generateSurfrev2D(float degreesY)
+{
+	// Note: the number of points generated will be 2*NUM_SLICES + 2
+	// (once on the inside, once on the outside, and two to cap it off at the end)
+	const int NUM_SLICES = 50;
+
+	std::vector<Vector3> points;
+
+	// Define the "bottom" of the polygon
+	points.push_back(Vector3(1,0,0));
+	points.push_back(Vector3(1,0,0));
+	
+	float sliceSize = degreesY / NUM_SLICES;
+	for(float theta = 0.0f; theta < degreesY; theta += sliceSize)
+	{
+		// If this is the last slice, make sure we don't overshoot past the specified # of degrees
+		float thisSlice = (theta + sliceSize > degreesY) ? degreesY - theta : sliceSize;
+
+		// Rotate the "bottom" points by the appropriate number of degrees for this slice
+		Matrix rotMatrix;
+		RotateY(&rotMatrix, ToRadian(theta + thisSlice));
+		Vector3 rotatedOutsidePoint;
+		Vector3 rotatedInsidePoint;
+		TransformCoord(&rotatedOutsidePoint, &points[0], &rotMatrix);
+		TransformCoord(&rotatedInsidePoint, &points[1], &rotMatrix);
+
+		points.push_back(rotatedOutsidePoint);
+		points.push_back(rotatedInsidePoint);
+	}
+
+	// Right now the sphere-slice "starts" at the x-axis and goes around counterclockwise from there.
+	// For easier usage, we want this to be centered at the x-axis.
+	// Hence, we need to rotate it down by degreesY/2.
+	// (This could have been done in one pass above, but it's clearer to follow this way, and this
+	// step is being done "offline" anyway so it's not time-critical. Not that it'd take long anyway...)
+	std::vector<Vector3> centeredPoints;
+	for(int i = 0; i < points.size(); i++)
+	{
+		Matrix rotMatrix;
+		RotateY(&rotMatrix, ToRadian(-degreesY / 2.0f));
+		Vector3 rotatedPoint;
+		centeredPoints.push_back(*TransformCoord(&rotatedPoint, &points[i], &rotMatrix));
+	}
+
+	return centeredPoints;
+}
+
+void generateSurfrev3D(std::vector<Vector3> polygon, float degreesZ, Mesh &mesh)
+{
+	const int NUM_SLICES = 50;
+
+	float sliceSize = degreesZ / NUM_SLICES;
+	for(float theta = 0.0f; theta < degreesZ; theta += sliceSize)
+	{
+		// If this is the last slice, make sure we don't overshoot past the specified # of degrees
+		float thisSlice = (theta + sliceSize > degreesZ) ? degreesZ - theta : sliceSize;
+
+		// Determine the rotated points for the beginning and end of this slice
+		std::vector<Vector3> begin, end;
+		Matrix beginRot, endRot;
+		RotateZ(&beginRot, ToRadian(theta));
+		RotateZ(&endRot, ToRadian(theta + thisSlice));
+		for(int i = 0; i < polygon.size(); i++)
+		{
+			Vector3 rotatedPoint;
+			begin.push_back(*TransformCoord(&rotatedPoint, &polygon[i], &beginRot));
+			end.push_back(*TransformCoord(&rotatedPoint, &polygon[i], &endRot));
+		}
+
+		// Triangulate the side of this slice and add the resultant faces to the mesh
+		for(int i = 0; i < polygon.size() - 1; i++)
+		{
+			Mesh::Face face;
+			Vector3 faceNormal, line1, line2;
+
+			// Compute face normal for triangle 1
+			line1 = end[i+1] - begin[i+1];
+			line2 = begin[i] - begin[i+1];
+			VectorCross(&faceNormal, &line1, &line2);
+			Normalize(&faceNormal, &faceNormal);
+
+			// **** TODO: right now the texture coordinates are just placeholders (all 0,1)
+			// Define first triangle
+			face.p0 = Vertex(begin[i], faceNormal, 0, 1);
+			face.p1 = Vertex(begin[i+1], faceNormal, 0, 1);
+			face.p2 = Vertex(end[i+1], faceNormal, 0, 1);
+			mesh.addFace(face);
+
+			// Compute face normal for triangle 2
+			line1 = begin[i] - end[i];
+			line2 = end[i+1] - end[i];
+			VectorCross(&faceNormal, &line1, &line2);
+			Normalize(&faceNormal, &faceNormal);
+			
+			// Second triangle
+			face.p0 = Vertex(end[i+1], faceNormal, 0, 1);
+			face.p1 = Vertex(end[i], faceNormal, 0, 1);
+			face.p2 = Vertex(begin[i], faceNormal, 0, 1);
+			mesh.addFace(face);
+		}
+
+		// If this is the first or last slice, triangulate the end to cap it off
+		if(theta == 0.0f) // first slice
+		{
+			// Compute normal for the whole endcap; for this end, it's simply (1,0,0)
+			Vector3 endcapNormal(1,0,0);
+
+			for(int i = 0; i < polygon.size() - 1; i++)
+			{
+				Mesh::Face face;
+				face.p0 = Vertex(begin[0], endcapNormal, 0, 1); // *** TODO: as above, texture coords. are placeholders
+				face.p1 = Vertex(begin[i], endcapNormal, 0, 1);
+				face.p2 = Vertex(begin[i+1], endcapNormal, 0, 1);
+				mesh.addFace(face);
+			}
+		}
+		else if(theta + sliceSize > degreesZ) // last slice
+		{
+			// Compute normal for the whole endcap: take (1,0,0) and rotate it by degreesZ
+			// (note that we've already computed the matrix endRot above for this exact rotation)
+			Vector3 endcapNormal(1,0,0);
+			TransformCoord(&endcapNormal, &endcapNormal, &endRot);
+			Normalize(&endcapNormal, &endcapNormal);
+
+			for(int i = 0; i < polygon.size() - 1; i++)
+			{
+				Mesh::Face face;
+				face.p0 = Vertex(begin[0], endcapNormal, 0, 1); // *** TODO: as above, texture coords. are placeholders
+				face.p1 = Vertex(begin[i], endcapNormal, 0, 1);
+				face.p2 = Vertex(begin[i+1], endcapNormal, 0, 1);
+				mesh.addFace(face);
+			}
+		}
+	}
+}

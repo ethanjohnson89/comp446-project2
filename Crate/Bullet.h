@@ -3,6 +3,7 @@
 #define Bullet_H
 
 #include "GameObject.h"
+#include "Mesh.h"
 #include "d3dUtil.h"
 //#include "C:\Users\KAPPELKR1\Desktop\Games 2\games code\Common\d3dUtil.h"
 //#include "Box.h"
@@ -80,6 +81,7 @@ public:
 		for(int i=0; i<3;i++)
 			pieces[i].setMTech(m);}
 	bool collided(GameObject *gameObject);
+	bool collided(Mesh *mesh);
 	void collisionVelocity(GameObject *gameObject);
 
 	Vector3 getOldPosition() {return oldPosition;}

@@ -145,6 +145,18 @@ bool Bullet::collided(GameObject *gameObject)
 	return false;
 }
 
+bool Bullet::collided(Mesh *mesh)
+{
+	for(int i=0; i<3; i++) {
+		//if(pieces[i].collided(gameObject)) {
+		if(mesh->collided(&pieces[i])) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void Bullet::randomizeVelocity()
 {
 	int x = rand();
