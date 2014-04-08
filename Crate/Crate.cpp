@@ -70,6 +70,7 @@ private:
 
 	Light mParallelLight;
 	Light mBossEmissive;
+	Light mSpot;
 
 	ID3D10Effect* mFX;
 	ID3D10EffectTechnique* mTech;
@@ -82,6 +83,7 @@ private:
 	ID3D10EffectVariable* mfxEyePosVar;
 	ID3D10EffectVariable* mfxLightVar; // parallel light
 	ID3D10EffectVariable *mfxBossEmissiveLightVar;
+	ID3D10EffectVariable *mfxSpotLightVar;
 	ID3D10EffectShaderResourceVariable* mfxDiffuseMapVar;
 	ID3D10EffectShaderResourceVariable* mfxSpecMapVar;
 	ID3D10EffectMatrixVariable* mfxTexMtxVar;
@@ -195,7 +197,7 @@ void CrateApp::initApp()
 	mCrateMesh.init(md3dDevice, 1.0f);
 
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice,
-		L"murray.jpg", 0, 0, &mDiffuseMapRV, 0 ));
+		L"walltexture2.jpg", 0, 0, &mDiffuseMapRV, 0 ));
 
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice,
 		L"defaultspec.dds", 0, 0, &mSpecMapRV, 0 ));
@@ -222,15 +224,27 @@ void CrateApp::initApp()
 	
 	mParallelLight.dir      = D3DXVECTOR3(0.57735f, -0.57735f, 0.57735f);
 	mParallelLight.ambient  = D3DXCOLOR(0.1f, 0.1f, 0.1f, 1.0f);
-	mParallelLight.diffuse  = D3DXCOLOR(0.5f, 0.5f, 0.5f, 1.0f);
+	mParallelLight.diffuse  = D3DXCOLOR(0.45f, 0.45f, 0.45f, 1.0f);
 	mParallelLight.specular = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 
 	// Note: the boss emissive light didn't work out as well as hoped, so this light has been re-purposed as another
 	// parallel source, to provide more even lighting for the background.
 	mBossEmissive.dir		= D3DXVECTOR3(-.57735f,.57735f,-.57735f);
 	mBossEmissive.ambient	= D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
-	mBossEmissive.diffuse	= D3DXCOLOR(0.5f, 0.5f, 0.5f, 1.0f);
+	mBossEmissive.diffuse	= D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 	mBossEmissive.specular	= D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+
+	// Spotlight - from player position, aimed at boss (position/direction updated in update())
+	// *** Turned off at the moment - it didn't really seem to add much to the scene; going with brighter diffuse lighting
+	// instead produced a better effect.
+	mSpot.ambient  = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+	mSpot.diffuse  = D3DXCOLOR(0,0,0,1);//D3DXCOLOR(10.0f, 10.0f, 10.0f, 1.0f);
+	mSpot.specular = D3DXCOLOR(1,1,1,1);//D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	mSpot.att.x    = 0.01f;
+	mSpot.att.y    = 0.01f;
+	mSpot.att.z    = 0.01f;
+	mSpot.spotPow  = 20.0f;
+	mSpot.range    = 40.0f;
 
 
 	bullet.init(md3dDevice, 1.0f);
@@ -524,6 +538,10 @@ void CrateApp::updateScene(float dt)
 		mEyePos.x =  mRadius*sinf(mPhi)*sinf(-mTheta);
 		mEyePos.z = -mRadius*sinf(mPhi)*cosf(-mTheta);
 		mEyePos.y =  mRadius*cosf(mPhi);
+
+		// Update position of spotlight based on eye position
+		mSpot.pos = mEyePos;
+		Normalize(&mSpot.dir, &(Vector3(0,0,0)-mEyePos));
 	
 		// Build the view matrix.
 		D3DXVECTOR3 target(0.0f, 0.0f, 0.0f);
@@ -584,6 +602,7 @@ void CrateApp::drawScene()
 	mfxEyePosVar->SetRawValue(&mEyePos, 0, sizeof(D3DXVECTOR3));
 	mfxLightVar->SetRawValue(&mParallelLight, 0, sizeof(Light));
 	mfxBossEmissiveLightVar->SetRawValue(&mBossEmissive, 0, sizeof(Light));
+	mfxSpotLightVar->SetRawValue(&mSpot, 0, sizeof(Light));
 	mWVP = mCrateWorld*mView*mProj;
 	mfxWVPVar->SetMatrix((float*)&mWVP);
 	mfxWorldVar->SetMatrix((float*)&mCrateWorld);
@@ -796,6 +815,7 @@ void CrateApp::buildFX()
 	mfxWorldVar      = mFX->GetVariableByName("gWorld")->AsMatrix();
 	mfxEyePosVar     = mFX->GetVariableByName("gEyePosW");
 	mfxLightVar      = mFX->GetVariableByName("gLight");
+	mfxSpotLightVar	 = mFX->GetVariableByName("gSpotLight");
 	mfxBossEmissiveLightVar = mFX->GetVariableByName("gBossEmissiveLight");
 	mfxDiffuseMapVar = mFX->GetVariableByName("gDiffuseMap")->AsShaderResource();
 	mfxSpecMapVar    = mFX->GetVariableByName("gSpecMap")->AsShaderResource();

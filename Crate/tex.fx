@@ -12,6 +12,7 @@ cbuffer cbPerFrame
 {
 	Light gLight;
 	Light gBossEmissiveLight;
+	Light gSpotLight;
 	float3 gEyePosW;
 };
 
@@ -103,6 +104,7 @@ float4 PS(VS_OUT pIn) : SV_Target
     SurfaceInfo v = {pIn.posW, normalW, diffuse, spec};
 	float3 litColor = ParallelLight(v, gLight, gEyePosW);
 	litColor += ParallelLight(v, gBossEmissiveLight, gEyePosW);
+	litColor += Spotlight(v, gSpotLight, gEyePosW);
     
     return float4(litColor, diffuse.a);
 }
