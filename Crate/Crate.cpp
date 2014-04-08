@@ -118,6 +118,7 @@ private:
 	float playerHealth;
 
 	bool spacePressedLastFrame;
+	bool enterPressedLastFrame;
 
 	int level;
 
@@ -125,6 +126,8 @@ private:
 
 	float bossDyingTimer;
 	bool bossDead;
+
+	float introMusicTimer;
 
 	// DEBUG
 	Mesh mesh;
@@ -151,7 +154,8 @@ CrateApp::CrateApp(HINSTANCE hInstance)
 	mfxLightVar(0), mfxDiffuseMapVar(0), mfxSpecMapVar(0), mfxTexMtxVar(0), 
 	mVertexLayout(0), mDiffuseMapRV(0), mSpecMapRV(0), mEyePos(0.0f, 0.0f, 0.0f), 
 	mRadius(25.0f), mTheta(0.0f), mPhi(PI/2), spinAmount(0), fireLaser(false), laserTimer(0), bossHealth(3),
-	spacePressedLastFrame(false), level(1), bossDyingTimer(0), bossDead(false)
+	spacePressedLastFrame(false), level(1), bossDyingTimer(0), bossDead(false), enterPressedLastFrame(false),
+	introMusicTimer(0), playerHealth(100)
 {
 	D3DXMatrixIdentity(&mCrateWorld);
 	D3DXMatrixIdentity(&mView);
@@ -249,7 +253,7 @@ void CrateApp::initApp()
 	laser.setOverrideColorVar(mfxOverrideColorFlag);
 	laser.setObjectColorVar(mfxObjectColor);
 	laser.setColor(D3DXCOLOR(1, 0, 0, 1));
-	laser.setInActive();
+	//laser.setInActive();
 
 	//background init
 	background[0].init(&bullet, 1.0f, D3DXVECTOR3(100.0f,0.0f,0.0f), D3DXVECTOR3(0.0f,0.0f,0.0f), 0, 50);
@@ -300,12 +304,53 @@ void CrateApp::onResize()
 void CrateApp::reinitialize()
 {
 	spacePressedLastFrame = false;
+	//enterPressedLastFrame = false;
 	//reset: player health, boss health, phis and thetas of laser and cam, setactive all walls, set their timers all to zero, 
 	//set laser to inactive and its timer to 0 (actually set mPhi to PI/2)
 
-	//if(level==1)
+	introMusicTimer = 0;
+	mPhi = PI/2;
+	mTheta = 0;
+	laserTheta = 0;
+	laserPhi = 0;
+	playerHealth = 100;
 
-	//if(level==2)
+	//playerHealth = 
+	
+	for(int j=0; j<NUM_LAYERS; j++)
+	{
+		for(int i=0; i<NUM_WALLS; i++)
+		{
+			//Matrix rotations[NUM_WALLS];
+			//Matrix spin, translate, diagonal;
+			//GameObject walls[NUM_WALLS];
+			//float thetas[NUM_WALLS];
+			//float phis[NUM_WALLS];
+			//float startingTheta[NUM_WALLS];
+			//float startingPhi[NUM_WALLS];
+			layers[j].regenTime[i] = 0;
+			layers[j].walls[i].setActive();
+		}
+	}
+
+	//laser.setInActive();
+	//laserTimer = 0;
+	laserTheta = (int)(mTheta+PI)%6;
+
+	if(level==1)
+	{
+		bossHealth = 3;
+	}
+	else if(level==2)
+	{
+		bossHealth = 5;
+	}
+
+	bossDyingTimer = 0;
+	bossDead = false;
+	mesh.setActive();
+	bulletObject.setInActive();
+
 }
 
 void CrateApp::updateScene(float dt)
@@ -320,19 +365,28 @@ void CrateApp::updateScene(float dt)
 	{
 	case intro:
 		{
-			if(GetAsyncKeyState(VK_RETURN) & 0x8000) 
+			if(!enterPressedLastFrame && GetAsyncKeyState(VK_RETURN) & 0x8000) 
 			{
 				state = start;
+				enterPressedLastFrame = true;
+				//PLAY INTRO MUSIC
 			}
+			else if(!GetAsyncKeyState(VK_RETURN)) enterPressedLastFrame = false;
+
 			break;
 		}
 	case start:
 		{
-			//UPDATE THE INTRO SPLASHSCREEN CUBE
-			if(GetAsyncKeyState(VK_RETURN) & 0x8000) 
+			/*if(!enterPressedLastFrame && GetAsyncKeyState(VK_RETURN) & 0x8000) 
 			{
 				state = game;
+				enterPressedLastFrame = true;
 			}
+			else if(!GetAsyncKeyState(VK_RETURN)) enterPressedLastFrame = false;*/
+
+			introMusicTimer += dt;
+			if(introMusicTimer > 1)
+				state = game;
 
 			break;
 		}
@@ -419,12 +473,19 @@ void CrateApp::updateScene(float dt)
 						reinitialize();
 					}
 					else if(level==2)
+					{
+						reinitialize();
 						state = end;
+					}
 				}
 			}
 
 			//LOSE
-			//if(health <= 0) state = restart;
+			if(abs(laserTheta-mTheta)<.1 && abs(laserPhi-mPhi)<.1)
+				playerHealth -= dt*33;
+			else playerHealth += dt*33;
+			if(playerHealth > 100) playerHealth = 100;
+			if(playerHealth <= 0) state = restart;
 
 			//BULLET COLLISION ON WALLS
 			if(bulletObject.getActiveState())
@@ -443,8 +504,8 @@ void CrateApp::updateScene(float dt)
 			}
 
 			//LASER COLLISION ON WALLS
-			if(fireLaser)
-			{
+			//if(fireLaser)
+			//{
 				for(int j=0; j<NUM_LAYERS; j++)
 				{
 					for(int i=0; i<NUM_WALLS; i++)
@@ -470,12 +531,12 @@ void CrateApp::updateScene(float dt)
 						}
 					}
 				}
-			}
+			//}
 
 			regenerateWalls(dt);
 
 			//CONTROLS WHEN LASER DISPLAYS
-			if(!fireLaser)
+			/*if(!fireLaser)
 			{
 				if(rand()%4000==0)
 				{
@@ -485,17 +546,17 @@ void CrateApp::updateScene(float dt)
 				}
 			}
 			else
-			{
+			{*/
 				laser.update(dt);
 				laserTimer += dt;
 				//at end of timer,set timer back to zero, set laser inactive
-				if(laserTimer > 100)
+				/*if(laserTimer > 100)
 				{
 					fireLaser = false;
 					laserTimer = 0;
 					laser.setInActive();
-				}
-			}
+				}*/
+			//}
 
 			if( laserTheta < 0.01f )	laserTheta = 2*PI-.02f;
 			if( laserTheta > 2*PI-0.01f)	laserTheta = .02f;
@@ -541,11 +602,12 @@ void CrateApp::updateScene(float dt)
 	case end:
 		{
 			//UPDATE CUBE FOR ENDING SPLASHSCREEN
-			/*if(GetAsyncKeyState(VK_RETURN) & 0x8000) 
+			if(!enterPressedLastFrame && GetAsyncKeyState(VK_RETURN) & 0x8000) 
 			{
-			reinitialize();
-			state = game;
-			}*/
+				state = intro;
+				enterPressedLastFrame = true;
+			}
+			else if(!GetAsyncKeyState(VK_RETURN)) enterPressedLastFrame = false;
 			//PLAY SOUND
 			break;
 		}
@@ -572,10 +634,21 @@ void CrateApp::regenerateWalls(float dt)
 			if(!layers[i].walls[j].getActiveState())
 			{
 				layers[i].regenTime[j] += dt;
-				if(layers[i].regenTime[j] > REGEN_TIME)
+				if(level==2)
 				{
-					layers[i].walls[j].setActive();
-					layers[i].regenTime[j] = 0;
+					if(layers[i].regenTime[j] > REGEN_TIME)
+					{
+						layers[i].walls[j].setActive();
+						layers[i].regenTime[j] = 0;
+					}
+				}
+				else if(level==1)
+				{
+					if(layers[i].regenTime[j] > REGEN_TIME_LVL1)
+					{
+						layers[i].walls[j].setActive();
+						layers[i].regenTime[j] = 0;
+					}
 				}
 			}
 		}
@@ -712,15 +785,31 @@ void CrateApp::drawScene()
 
 			//laser
 			//TRACKING:
-			if(abs(laserTheta-mTheta)>.01)
+			if(level==2)
 			{
-				if((laserTheta-mTheta > -PI && laserTheta-mTheta < 0) || (laserTheta-mTheta > PI)) laserTheta += .0015f;
-				else laserTheta -= .0015f;
+				if(abs(laserTheta-mTheta)>.01)
+				{
+					if((laserTheta-mTheta > -PI && laserTheta-mTheta < 0) || (laserTheta-mTheta > PI)) laserTheta += .0015f;
+					else laserTheta -= .0015f;
+				}
+				if(abs(laserPhi-mPhi)>.01)
+				{
+					if(laserPhi > mPhi) laserPhi -= .0015f;
+					else laserPhi += .0015f;
+				}
 			}
-			if(abs(laserPhi-mPhi)>.01)
+			else if(level==1)
 			{
-				if(laserPhi > mPhi) laserPhi -= .0015f;
-				else laserPhi += .0015f;
+				if(abs(laserTheta-mTheta)>.01)
+				{
+					if((laserTheta-mTheta > -PI && laserTheta-mTheta < 0) || (laserTheta-mTheta > PI)) laserTheta += .0015f;
+					else laserTheta -= .0015f;
+				}
+				if(abs(laserPhi-mPhi)>.01)
+				{
+					if(laserPhi > mPhi) laserPhi -= .0015f;
+					else laserPhi += .0015f;
+				}
 			}
 			Matrix translateOut;
 			Matrix rotatePhi, rotateTheta;
@@ -735,11 +824,11 @@ void CrateApp::drawScene()
 			std::wostringstream outs;   
 			outs.precision(2);
 			//outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n laser phi: " << laserPhi << "\nlaser theta: " << laserTheta
-			outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n laser phi: " << laserPhi << "\nlaser theta: " << laserTheta << "\nwall theta: " << layers[3].thetas[0] << "\nwall phi: " << layers[3].phis[0];;
+			outs << L"Health: " << playerHealth;
 			stats = outs.str();
 			// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 			RECT R = {5, 5, 0, 0};
-			mFont->DrawText(0, stats.c_str(), -1, &R, DT_NOCLIP, BLACK);
+			mFont->DrawText(0, stats.c_str(), -1, &R, DT_NOCLIP, WHITE);
 
 			//mSwapChain->Present(0, 0);
 			//state = restart;

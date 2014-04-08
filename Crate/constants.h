@@ -21,7 +21,9 @@
 
 #define Radius 25
 #define REGEN_TIME 2.5
+#define REGEN_TIME_LVL1 4
 #define NUM_WALLS 16
+//#define NUM_WALLS_LVL1 10
 #define NUM_LAYERS 5
 
 enum State {intro, start, game, end, restart, nextLevel};
