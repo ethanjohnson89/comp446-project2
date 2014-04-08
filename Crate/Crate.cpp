@@ -181,7 +181,8 @@ private:
 
 	Box mCrateMesh;
 	Box target1, bullet;
-	GameObject gameObject6;
+	GameObject boss;
+	GameObject health[3];
 
 	GameObject laser;
 	Layer layers[NUM_LAYERS];
@@ -252,7 +253,7 @@ CrateApp::CrateApp(HINSTANCE hInstance)
 : D3DApp(hInstance), mFX(0), mTech(0), mfxWVPVar(0), mfxWorldVar(0), mfxEyePosVar(0),
   mfxLightVar(0), mfxDiffuseMapVar(0), mfxSpecMapVar(0), mfxTexMtxVar(0), 
   mVertexLayout(0), mDiffuseMapRV(0), mSpecMapRV(0), mEyePos(0.0f, 0.0f, 0.0f), 
-  mRadius(25.0f), mTheta(0.0f), mPhi(PI*0.4f), spinAmount(0), fireLaser(false), laserTimer(0), bossHealth(3),
+  mRadius(25.0f), mTheta(0.0f), mPhi(PI/2), spinAmount(0), fireLaser(false), laserTimer(0), bossHealth(3),
   spacePressedLastFrame(false), level(1)
 {
 	D3DXMatrixIdentity(&mCrateWorld);
@@ -301,7 +302,8 @@ void CrateApp::initApp()
 
 	bullet.init(md3dDevice, 1.0f);
 
-	gameObject6.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1);
+	boss.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1);
+	health[0].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(-10,0,10), 10,1);
 	laser.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2);
 	laser.setInActive();
 
@@ -355,6 +357,8 @@ void CrateApp::updateScene(float dt)
 	if(GetAsyncKeyState('Z') & 0x8000)	mRadius -= 15.0f*dt;
 	if(GetAsyncKeyState('X') & 0x8000)	mRadius += 15.0f*dt;
 
+	for(int i=0; i<3; i++)
+		health[0].update(dt);
 	
 
 	if(!spacePressedLastFrame && !bulletObject.getActiveState() && GetAsyncKeyState(' ') & 0x8000)
@@ -404,13 +408,13 @@ void CrateApp::updateScene(float dt)
 	//for(int i=0; i<3; i++)
 	//	bullet1[i].update(dt);
 	bulletObject.update(dt);
-	gameObject6.update(dt);
+	boss.update(dt);
 
 	//BULLET COLLISION ON BOSS
-	if(bulletObject.collided(&gameObject6))
+	if(bulletObject.collided(&boss))
 	{
 		bossHealth--;
-		if(bossHealth == 0) gameObject6.setInActive();
+		if(bossHealth == 0) boss.setInActive();
 		//for(int i=0; i<3; i++)
 		//	bullet1[i].setInActive();
 		bulletObject.setInActive();
@@ -572,13 +576,29 @@ void CrateApp::drawScene()
     }
 
 	//BOSS
-	mWVP = gameObject6.getWorldMatrix() *mView*mProj;
+	mWVP = boss.getWorldMatrix() *mView*mProj;
 	mfxWVPVar->SetMatrix((float*)&mWVP);
-	gameObject6.setMTech(mTech);
-	gameObject6.draw();
+	boss.setMTech(mTech);
+	boss.draw();
 
-	Matrix s;
-	RotateY(&s, PI/4);
+	//Matrix s;
+	//RotateY(&s, PI/4);
+
+
+
+	//HEALTH BAR:
+	Matrix rphi, rtheta;
+	RotateX(&rphi, -mPhi);
+	RotateY(&rtheta, -mTheta);
+
+	/*for(int i=0; i<1; i++)
+	{
+		mWVP = health[i].getWorldMatrix() * rphi * rtheta * mView*mProj;
+		mfxWVPVar->SetMatrix((float*)&mWVP);
+		health[i].setMTech(mTech);
+		health[i].draw();
+	}*/
+
 
 	//LAYERS:
 	for(int i=0; i<3; i++)
@@ -592,11 +612,6 @@ void CrateApp::drawScene()
 		}
 	}
 
-	/*mWVP = layers[2].walls[5].getWorldMatrix() * layers[2].translate  * layers[2].rotations[5] * layers[2].spin * mView*mProj;
-	mfxWVPVar->SetMatrix((float*)&mWVP);
-	layers[2].walls[5].setMTech(mTech);
-	layers[2].walls[5].draw();*/
-
 	//FOR DIAGONAL ROTATIONS:
 	for(int i=3; i<NUM_LAYERS; i++)
 	{
@@ -609,10 +624,6 @@ void CrateApp::drawScene()
 		}
 	}
 
-	/*mWVP = layers[3].walls[0].getWorldMatrix() * layers[3].translate  * layers[3].rotations[0] * layers[3].spin * layers[3].diagonal * mView*mProj;
-	mfxWVPVar->SetMatrix((float*)&mWVP);
-	layers[3].walls[0].setMTech(mTech);
-	layers[3].walls[0].draw();*/
 	
 	//bullet
 	bulletObject.setMTech(mTech);
