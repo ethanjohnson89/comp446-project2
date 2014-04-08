@@ -16,6 +16,7 @@
 //#include "Layer.h"
 #include "Bullet.h"
 #include "Layer.h"
+#include "Mesh.h"
 #include "constants.h"
 #include <sstream>
 #include <string>
@@ -24,7 +25,7 @@
 
 // Utility functions for generating meshes
 std::vector<Vector3> generateSurfrev2D(float degreesY); // generates a x-z cross-sectional "slice" (of specified degrees around the y-axis) of a unit spherical shell (thickness 0.1)
-std::vector<Vector3> generateSurfrev3D(std::vector<Vector3> polygon, float degreesZ);
+void generateSurfrev3D(std::vector<Vector3> polygon, float degreesZ, Mesh &mesh); // rotates a polygon in the x-y plane to create a 3-D mesh
 
 class CrateApp : public D3DApp
 {
@@ -142,6 +143,15 @@ void CrateApp::initApp()
 	std::vector<Vector3> output = generateSurfrev2D(180);
 	for(int i = 0; i < output.size(); i++)
 		fout << "Point " << i << ": x = " << output[i].x << ", y = " << output[i].y << ", z = " << output[i].z << std::endl;
+
+	fout << std::endl << std::endl;
+
+	Mesh mesh;
+	generateSurfrev3D(output, 180, mesh);
+
+	for(int i = 0; i < mesh.vertices.size(); i++)
+		fout << "Vertex " << i << ": x = " << mesh.vertices[i].pos.x << ", y = " << mesh.vertices[i].pos.y << ", z = " << mesh.vertices[i].pos.z << std::endl;
+
 	fout.close();
 	// END DEBUG CODE
 
@@ -535,8 +545,58 @@ std::vector<Vector3> generateSurfrev2D(float degreesY)
 	return centeredPoints;
 }
 
-std::vector<Vector3> generateSurfrev3D(std::vector<Vector3> polygon, float degreesZ)
+void generateSurfrev3D(std::vector<Vector3> polygon, float degreesZ, Mesh &mesh)
 {
-	// placeholder
-	return std::vector<Vector3>();
+	const int NUM_SLICES = 10;
+
+	float sliceSize = degreesZ / NUM_SLICES;
+	for(float theta = 0.0f; theta < degreesZ; theta += sliceSize)
+	{
+		// If this is the last slice, make sure we don't overshoot past the specified # of degrees
+		float thisSlice = (theta + sliceSize > degreesZ) ? degreesZ - theta : sliceSize;
+
+		// Determine the rotated points for the beginning and end of this slice
+		std::vector<Vector3> begin, end;
+		Matrix beginRot, endRot;
+		RotateZ(&beginRot, ToRadian(theta));
+		RotateZ(&endRot, ToRadian(theta + thisSlice));
+		for(int i = 0; i < polygon.size(); i++)
+		{
+			Vector3 rotatedPoint;
+			begin.push_back(*TransformCoord(&rotatedPoint, &polygon[i], &beginRot));
+			end.push_back(*TransformCoord(&rotatedPoint, &polygon[i], &endRot));
+		}
+
+		// Triangulate the side of this slice and add the resultant faces to the mesh
+		for(int i = 0; i < polygon.size() - 1; i++)
+		{
+			Mesh::Face face;
+			Vector3 faceNormal, line1, line2;
+
+			// Compute face normal for triangle 1
+			line1 = end[i+1] - begin[i+1];
+			line2 = begin[i] - begin[i+1];
+			VectorCross(&faceNormal, &line1, &line2);
+			Normalize(&faceNormal, &faceNormal);
+
+			// **** Note: right now the texture coordinates are just placeholders (all 0,1)
+			// Define first triangle
+			face.p0 = Vertex(begin[i], faceNormal, 0, 1);
+			face.p1 = Vertex(begin[i+1], faceNormal, 0, 1);
+			face.p2 = Vertex(end[i+1], faceNormal, 0, 1);
+			mesh.addFace(face);
+
+			// Compute face normal for triangle 2
+			line1 = begin[i] - end[i];
+			line2 = end[i+1] - end[i];
+			VectorCross(&faceNormal, &line1, &line2);
+			Normalize(&faceNormal, &faceNormal);
+			
+			// Second triangle
+			face.p0 = Vertex(end[i+1], faceNormal, 0, 1);
+			face.p1 = Vertex(end[i], faceNormal, 0, 1);
+			face.p2 = Vertex(begin[i], faceNormal, 0, 1);
+			mesh.addFace(face);
+		}
+	}
 }

@@ -16,6 +16,8 @@
 #define Normalize D3DXVec3Normalize
 #define TransformVec D3DXVec3Transform
 #define TransformCoord D3DXVec3TransformCoord
+#define VectorDot D3DXVec3Dot
+#define VectorCross D3DXVec3Cross
 
 
 #endif
