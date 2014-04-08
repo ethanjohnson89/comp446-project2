@@ -53,6 +53,10 @@ private:
 	GameObject laser;
 	Layer layers[NUM_LAYERS];
 
+	GameObject background[6];
+
+	ID3D10ShaderResourceView* mBackgroundRV;
+
 	Bullet bulletObject;
 
 	Light mParallelLight;
@@ -143,6 +147,7 @@ CrateApp::~CrateApp()
 	ReleaseCOM(mVertexLayout);
 	ReleaseCOM(mDiffuseMapRV);
 	ReleaseCOM(mSpecMapRV);
+	ReleaseCOM(mBackgroundRV);
 }
 
 void CrateApp::initApp()
@@ -169,6 +174,8 @@ void CrateApp::initApp()
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"defaultspec.dds", 0, 0, &mSpecMapRV, 0 ));
 
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"heic1215b.jpg", 0, 0, &mBackgroundRV, 0 ));
 
 	mParallelLight.dir      = D3DXVECTOR3(0.57735f, -0.57735f, 0.57735f);
 	mParallelLight.ambient  = D3DXCOLOR(0.4f, 0.4f, 0.4f, 1.0f);
@@ -183,6 +190,14 @@ void CrateApp::initApp()
 	laser.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2);
 	laser.setInActive();
 
+	//background init
+	background[0].init(&bullet, 1.0f, D3DXVECTOR3(100.0f,0.0f,0.0f), D3DXVECTOR3(0.0f,0.0f,0.0f), 0, 50);
+	background[1].init(&bullet, 1.0f, D3DXVECTOR3(-100.0f,0.0f,0.0f), D3DXVECTOR3(0.0f,0.0f,0.0f), 0, 50);
+	background[2].init(&bullet, 1.0f, D3DXVECTOR3(0.0f,100.0f,0.0f), D3DXVECTOR3(0.0f,0.0f,0.0f), 0, 50);
+	background[3].init(&bullet, 1.0f, D3DXVECTOR3(0.0f,-100.0f,0.0f), D3DXVECTOR3(0.0f,0.0f,0.0f), 0, 50);
+	background[4].init(&bullet, 1.0f, D3DXVECTOR3(0.0f,0.0f,100.0f), D3DXVECTOR3(0.0f,0.0f,0.0f), 0, 50);
+	background[5].init(&bullet, 1.0f, D3DXVECTOR3(0.0f,0.0f,-100.0f), D3DXVECTOR3(0.0f,0.0f,0.0f), 0, 50);
+	
 	//LAYERS:
 	//SPECIFY ROTATION AXIS AND RADIUS IN CONSTRUCTOR
 	layers[0] = Layer(rotationAxis::Y, 5);
@@ -289,6 +304,10 @@ void CrateApp::updateScene(float dt)
 	bulletObject.update(dt);
 	boss.update(dt);
 
+	//update once
+	for(int i=0; i<6; i++)
+		background[i].update(dt);
+
 	//BULLET COLLISION ON BOSS
 	/*if(bulletObject.collided(&boss))
 	{
@@ -301,7 +320,6 @@ void CrateApp::updateScene(float dt)
 			mesh.setInActive();
 		bulletObject.setInActive();
 	}
-
 
 	//BULLET COLLISION ON WALLS
 	if(bulletObject.getActiveState())
@@ -387,8 +405,7 @@ void CrateApp::updateScene(float dt)
 
 	if( laserTheta < 0.01f )	laserTheta = 2*PI-.02f;
 	if( laserTheta > 2*PI-0.01f)	laserTheta = .02f;
-
-
+	
 	// Convert Spherical to Cartesian coordinates: mPhi measured from +y
 	// and mTheta measured counterclockwise from -z.
 	mEyePos.x =  mRadius*sinf(mPhi)*sinf(-mTheta);
@@ -486,7 +503,22 @@ void CrateApp::drawScene()
 	}*/
 
 
+	//BACKGROUND
+	mfxDiffuseMapVar->SetResource(mBackgroundRV);
+	mfxSpecMapVar->SetResource(mSpecMapRV);
+	for(int i=0; i<6; i++) {
+		mWVP = background[i].getWorldMatrix()*mView*mProj;
+		mfxWVPVar->SetMatrix((float*)&mWVP);
+		background[i].setMTech(mTech);
+		background[i].draw();
+	}
+
+	Matrix s;
+	RotateY(&s, PI/4);
+
 	//LAYERS:
+	mfxDiffuseMapVar->SetResource(mDiffuseMapRV);
+	mfxSpecMapVar->SetResource(mSpecMapRV);
 	for(int i=0; i<3; i++)
 	{
 		for(int j=0; j<NUM_WALLS; j++)
