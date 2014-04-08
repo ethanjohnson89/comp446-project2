@@ -69,6 +69,7 @@ private:
 	ID3D10ShaderResourceView* mDiffuseMapRV_IntroScreen;
 
 	Light mParallelLight;
+	Light mBossEmissive;
 
 	ID3D10Effect* mFX;
 	ID3D10EffectTechnique* mTech;
@@ -79,7 +80,8 @@ private:
 	ID3D10EffectMatrixVariable* mfxWVPVar;
 	ID3D10EffectMatrixVariable* mfxWorldVar;
 	ID3D10EffectVariable* mfxEyePosVar;
-	ID3D10EffectVariable* mfxLightVar;
+	ID3D10EffectVariable* mfxLightVar; // parallel light
+	ID3D10EffectVariable *mfxBossEmissiveLightVar;
 	ID3D10EffectShaderResourceVariable* mfxDiffuseMapVar;
 	ID3D10EffectShaderResourceVariable* mfxSpecMapVar;
 	ID3D10EffectMatrixVariable* mfxTexMtxVar;
@@ -218,9 +220,16 @@ void CrateApp::initApp()
 		L"endscreen.png", 0, 0, &mEndRV, 0 ));
 	
 	mParallelLight.dir      = D3DXVECTOR3(0.57735f, -0.57735f, 0.57735f);
-	mParallelLight.ambient  = D3DXCOLOR(0.4f, 0.4f, 0.4f, 1.0f);
+	mParallelLight.ambient  = D3DXCOLOR(0.1f, 0.1f, 0.1f, 1.0f);
 	mParallelLight.diffuse  = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 	mParallelLight.specular = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+
+	// Note: the boss emissive light didn't work out as well as hoped, so this light has been re-purposed as another
+	// parallel source, to provide more even lighting for the background.
+	mBossEmissive.dir		= D3DXVECTOR3(-.57735f,.57735f,-.57735f);
+	mBossEmissive.ambient	= D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+	mBossEmissive.diffuse	= D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	mBossEmissive.specular	= D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 
 
 	bullet.init(md3dDevice, 1.0f);
@@ -573,6 +582,7 @@ void CrateApp::drawScene()
 	// set constants
 	mfxEyePosVar->SetRawValue(&mEyePos, 0, sizeof(D3DXVECTOR3));
 	mfxLightVar->SetRawValue(&mParallelLight, 0, sizeof(Light));
+	mfxBossEmissiveLightVar->SetRawValue(&mBossEmissive, 0, sizeof(Light));
 	mWVP = mCrateWorld*mView*mProj;
 	mfxWVPVar->SetMatrix((float*)&mWVP);
 	mfxWorldVar->SetMatrix((float*)&mCrateWorld);
@@ -777,6 +787,7 @@ void CrateApp::buildFX()
 	mfxWorldVar      = mFX->GetVariableByName("gWorld")->AsMatrix();
 	mfxEyePosVar     = mFX->GetVariableByName("gEyePosW");
 	mfxLightVar      = mFX->GetVariableByName("gLight");
+	mfxBossEmissiveLightVar = mFX->GetVariableByName("gBossEmissiveLight");
 	mfxDiffuseMapVar = mFX->GetVariableByName("gDiffuseMap")->AsShaderResource();
 	mfxSpecMapVar    = mFX->GetVariableByName("gSpecMap")->AsShaderResource();
 	mfxTexMtxVar     = mFX->GetVariableByName("gTexMtx")->AsMatrix();

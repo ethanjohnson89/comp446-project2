@@ -11,6 +11,7 @@
 cbuffer cbPerFrame
 {
 	Light gLight;
+	Light gBossEmissiveLight;
 	float3 gEyePosW;
 };
 
@@ -95,6 +96,7 @@ float4 PS(VS_OUT pIn) : SV_Target
 	// Compute the lit color for this pixel.
     SurfaceInfo v = {pIn.posW, normalW, diffuse, spec};
 	float3 litColor = ParallelLight(v, gLight, gEyePosW);
+	litColor += ParallelLight(v, gBossEmissiveLight, gEyePosW);
     
     return float4(litColor, diffuse.a);
 }
