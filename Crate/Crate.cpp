@@ -213,7 +213,7 @@ private:
 
 	int bossHealth;
 
-	
+	bool spacePressedLastFrame;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
@@ -236,7 +236,8 @@ CrateApp::CrateApp(HINSTANCE hInstance)
 : D3DApp(hInstance), mFX(0), mTech(0), mfxWVPVar(0), mfxWorldVar(0), mfxEyePosVar(0),
   mfxLightVar(0), mfxDiffuseMapVar(0), mfxSpecMapVar(0), mfxTexMtxVar(0), 
   mVertexLayout(0), mDiffuseMapRV(0), mSpecMapRV(0), mEyePos(0.0f, 0.0f, 0.0f), 
-  mRadius(25.0f), mTheta(0.0f), mPhi(PI*0.4f), spinAmount(0), fireLaser(false), laserTimer(0), bossHealth(3)
+  mRadius(25.0f), mTheta(0.0f), mPhi(PI*0.4f), spinAmount(0), fireLaser(false), laserTimer(0), bossHealth(3),
+  spacePressedLastFrame(false)
 {
 	D3DXMatrixIdentity(&mCrateWorld);
 	D3DXMatrixIdentity(&mView);
@@ -290,8 +291,8 @@ void CrateApp::initApp()
 	//LAYERS:
 	//SPECIFY ROTATION AXIS AND RADIUS IN CONSTRUCTOR
 	layers[0] = Layer(rotationAxis::Y, 5);
-	layers[1] = Layer(rotationAxis::Z, 6);
-	layers[2] = Layer(rotationAxis::X, 7);
+	layers[1] = Layer(rotationAxis::Z, 5);
+	layers[2] = Layer(rotationAxis::X, 5);
 	layers[3] = Layer(rotationAxis::YZ, 4);
 	layers[4] = Layer(rotationAxis::ZY, 8);
 	for(int i=0; i<NUM_WALLS; i++)
@@ -337,7 +338,9 @@ void CrateApp::updateScene(float dt)
 	if(GetAsyncKeyState('Z') & 0x8000)	mRadius -= 15.0f*dt;
 	if(GetAsyncKeyState('X') & 0x8000)	mRadius += 15.0f*dt;
 
-	if(!bulletObject.getActiveState() && GetAsyncKeyState(' ') & 0x8000)
+	
+
+	if(!spacePressedLastFrame && !bulletObject.getActiveState() && GetAsyncKeyState(' ') & 0x8000)
 	{
 		//if(!bullet1[0].getActiveState())
 		//{
@@ -352,6 +355,9 @@ void CrateApp::updateScene(float dt)
 	//	}
 		bulletObject.shoot(mEyePos/2,2*Vector3(-mEyePos), mTheta, mPhi);
 	}
+
+	if(GetAsyncKeyState(' ') & 0x8000) spacePressedLastFrame = true;
+	else spacePressedLastFrame = false;
 	
 	spinAmount += 1*dt;
 	if (spinAmount*10 > 360)
@@ -407,7 +413,19 @@ void CrateApp::updateScene(float dt)
 
 
 	//LASER COLLISION ON WALLS
-
+	if(fireLaser)
+	{
+		for(int j=0; j<NUM_LAYERS; j++)
+		{
+			for(int i=0; i<NUM_WALLS; i++)
+			{
+				if(layers[j].walls[i].getActiveState() && (abs(laserTheta - layers[j].thetas[i]) < .3) && (abs(laserPhi - layers[j].phis[i]) < .3))
+				{
+					layers[j].walls[i].setInActive();
+				}
+			}
+		}
+	}
 
 	
 
@@ -553,7 +571,7 @@ void CrateApp::drawScene()
 	Matrix translateOut;
 	Matrix rotatePhi, rotateTheta;
 	RotateX(&rotatePhi, -laserPhi+PI/2);
-	RotateY(&rotateTheta, -laserTheta);
+	RotateY(&rotateTheta, laserTheta);
 	Translate(&translateOut, 0, 0, -mRadius*2);
 	mWVP = laser.getWorldMatrix() *translateOut * rotatePhi * rotateTheta * mView*mProj;
 	mfxWVPVar->SetMatrix((float*)&mWVP);
@@ -562,8 +580,7 @@ void CrateApp::drawScene()
 
 	std::wostringstream outs;   
 	outs.precision(2);
-	//outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n laser phi: " << laserPhi << "\nlaser theta: " << laserTheta << "\nlaserTimer: " << laserTimer;
-	outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n wall1 phi: " << layers[2].phis[5] << "\nwall1 theta: " << layers[2].thetas[5];
+	outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n laser phi: " << laserPhi << "\nlaser theta: " << laserTheta;
 	stats = outs.str();
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 	RECT R = {5, 5, 0, 0};
