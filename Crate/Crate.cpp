@@ -99,6 +99,7 @@ private:
 	ID3D10EffectVariable *mfxOverrideColorFlag;
 	ID3D10EffectVectorVariable *mfxObjectColor;
 	ID3D10EffectVariable *mfxAmbientOnlyFlag;
+	ID3D10EffectVectorVariable *mfxTintOffset;
 
 	D3DXMATRIX mCrateWorld;
 
@@ -325,6 +326,16 @@ void CrateApp::initApp()
 		layers[2].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.5,1.5,.1);
 		layers[3].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.5,1.5,.1);
 		layers[4].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.5,1.5,.1);*/
+		layers[0].walls[i].mfxTintOffsetVar = mfxTintOffset;
+		layers[1].walls[i].mfxTintOffsetVar = mfxTintOffset;
+		layers[2].walls[i].mfxTintOffsetVar = mfxTintOffset;
+		layers[3].walls[i].mfxTintOffsetVar = mfxTintOffset;
+		layers[4].walls[i].mfxTintOffsetVar = mfxTintOffset;
+		layers[0].walls[i].tint = true;
+		layers[1].walls[i].tint = true;
+		layers[2].walls[i].tint = true;
+		layers[3].walls[i].tint = true;
+		layers[4].walls[i].tint = true;
 	}
 
 	laserTheta = (int)(mTheta+PI)%6;
@@ -375,6 +386,8 @@ void CrateApp::reinitialize()
 			layers[j].regenTime[i] = 0;
 			layers[j].walls[i].setActive();
 			layers[j].wallHealth[i] = 2;
+
+			layers[j].walls[i].tintOffset = D3DXCOLOR(0,0,0,0); // reset tint
 		}
 	}
 
@@ -530,7 +543,7 @@ void CrateApp::updateScene(float dt)
 			if(bossDead)
 			{
 				bossDyingTimer += dt;
-				if(bossDyingTimer > 3) //CHANGE TO LENGTH OF SOUND
+				if(bossDyingTimer > 2) //CHANGE TO LENGTH OF SOUND
 				{
 					if(level==1) 
 					{
@@ -580,6 +593,7 @@ void CrateApp::updateScene(float dt)
 							layers[j].wallHealth[i] --;
 							bulletObject.setInActive();
 							audio->playCue(WALLHIT);
+							layers[j].walls[i].tintOffset += D3DXCOLOR(.5,.5,.5,0);
 							if(layers[j].wallHealth[i] == 0)
 								layers[j].walls[i].setInActive();
 						}
@@ -732,6 +746,8 @@ void CrateApp::regenerateWalls(float dt)
 						layers[i].walls[j].setActive();
 						layers[i].regenTime[j] = 0;
 						layers[i].wallHealth[j] = 2;
+
+						layers[i].walls[j].tintOffset = D3DXCOLOR(0,0,0,0); // reset tint
 					}
 				}
 				else if(level==1)
@@ -741,6 +757,8 @@ void CrateApp::regenerateWalls(float dt)
 						layers[i].walls[j].setActive();
 						layers[i].regenTime[j] = 0;
 						layers[i].wallHealth[j] = 2;
+
+						layers[i].walls[j].tintOffset = D3DXCOLOR(0,0,0,0); // reset tint
 					}
 				}
 			}
@@ -1053,6 +1071,7 @@ void CrateApp::buildFX()
 	mfxOverrideColorFlag = mFX->GetVariableByName("gOverrideColorFlag");
 	mfxObjectColor	 = mFX->GetVariableByName("gObjectColor")->AsVector();
 	mfxAmbientOnlyFlag = mFX->GetVariableByName("gAmbientOnlyFlag");
+	mfxTintOffset	 = mFX->GetVariableByName("gTintOffset")->AsVector();
 }
 
 void CrateApp::buildVertexLayouts()

@@ -16,6 +16,9 @@ GameObject::GameObject()
 	srand(time(0));
 
 	overrideColor = false;
+
+	tintOffset = D3DXCOLOR(0,0,0,1);
+	tint = false;
 }
 
 GameObject::~GameObject()
@@ -37,6 +40,9 @@ void GameObject::draw()
 		mfxOverrideColorVar->SetRawValue(&overrideColorFlag, 0, sizeof(int));
 		mfxObjectColorVar->SetFloatVector(color);
 	}
+
+	if(tint)
+		mfxTintOffsetVar->SetFloatVector(tintOffset);
 
 	for(UINT p = 0; p < techDesc.Passes; ++p)
 	{

@@ -82,6 +82,11 @@ public:
     void setOverrideColorVar(ID3D10EffectVariable *v) { mfxOverrideColorVar = v; } // both of these must be set if overriding color
     void setObjectColorVar(ID3D10EffectVectorVariable *v) { mfxObjectColorVar = v; }
 
+	// Quick last-minute hack for Program 2 - encapsulate this better for Program 3
+	D3DXCOLOR tintOffset; // adds or subtracts from the texture color - initialized to 0 in constructor
+	ID3D10EffectVectorVariable *mfxTintOffsetVar;
+	bool tint;
+
 
 
 private:

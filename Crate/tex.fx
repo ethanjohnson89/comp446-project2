@@ -28,6 +28,8 @@ cbuffer cbPerObject
 	float4 gObjectColor;
 
 	int gAmbientOnlyFlag;
+
+	float4 gTintOffset;
 };
 
 // Nonnumeric values cannot be added to a cbuffer.
@@ -93,6 +95,8 @@ float4 PS(VS_OUT pIn) : SV_Target
 	// If we've turned off all non-ambient lighting, simply return the pixel color at full intensity
 	if(gAmbientOnlyFlag == 1)
 		return diffuse;
+
+	diffuse += gTintOffset;
 	
 	// Map [0,1] --> [0,256]
 	spec.a *= 256.0f;
