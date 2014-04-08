@@ -28,8 +28,8 @@
 #define LASER_SPEED_LVL2 .005
 
 enum State {intro, start, game, end, restart, nextLevel};
-
 //// Audio stuff
+
 // audio files
 const char WAVE_BANK[]  = "audio\\Win\\Wave Bank.xwb";
 // SOUND_BANK must be location of .xsb file.
