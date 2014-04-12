@@ -429,7 +429,7 @@ void CrateApp::updateScene(float dt)
 				state = start;
 				enterPressedLastFrame = true;
 				//PLAY INTRO MUSIC
-				audio->playCue(INTROMUSIC);
+				//audio->playCue(INTROMUSIC);
 			}
 			else if(!GetAsyncKeyState(VK_RETURN)) enterPressedLastFrame = false;
 
@@ -437,19 +437,19 @@ void CrateApp::updateScene(float dt)
 		}
 	case start:
 		{
-			/*if(!enterPressedLastFrame && GetAsyncKeyState(VK_RETURN) & 0x8000) 
+			if(!enterPressedLastFrame && GetAsyncKeyState(VK_RETURN) & 0x8000) 
 			{
 				state = game;
 				enterPressedLastFrame = true;
 			}
-			else if(!GetAsyncKeyState(VK_RETURN)) enterPressedLastFrame = false;*/
+			else if(!GetAsyncKeyState(VK_RETURN)) enterPressedLastFrame = false;
 
-			introMusicTimer += dt;
+			/*introMusicTimer += dt;
 			if(introMusicTimer > 12.5)
 			{
 				audio->playCue(LASER);
 				state = game;
-			}
+			}*/
 
 			break;
 		}
@@ -475,7 +475,7 @@ void CrateApp::updateScene(float dt)
 				//}
 				//	}
 				bulletObject.shoot(mEyePos/2,2*Vector3(-mEyePos), mTheta, mPhi);
-				audio->playCue(BULLETSHOOT);
+				//audio->playCue(BULLETSHOOT);
 			}
 
 			if(GetAsyncKeyState(' ') & 0x8000) spacePressedLastFrame = true;
@@ -526,8 +526,8 @@ void CrateApp::updateScene(float dt)
 					laser.setInActive();
 					bulletObject.setInActive();
 					//PLAY SOUND
-					audio->stopCue(LASER);
-					audio->playCue(BOSSDYING);
+					//audio->stopCue(LASER);
+					//audio->playCue(BOSSDYING);
 				}
 			}
 
@@ -555,8 +555,8 @@ void CrateApp::updateScene(float dt)
 					else if(level==2)
 					{
 						reinitialize();
-						audio->stopCue(LASER);
-						audio->playCue(ENDMUSIC);
+						//audio->stopCue(LASER);
+						//audio->playCue(ENDMUSIC);
 						state = end;
 					}
 				}
@@ -578,7 +578,7 @@ void CrateApp::updateScene(float dt)
 			{
 				state = restart;
 				reinitialize();
-				audio->stopCue(LASER);
+				//audio->stopCue(LASER);
 			}
 
 			//BULLET COLLISION ON WALLS
@@ -592,7 +592,7 @@ void CrateApp::updateScene(float dt)
 						{
 							layers[j].wallHealth[i] --;
 							bulletObject.setInActive();
-							audio->playCue(WALLHIT);
+							//audio->playCue(WALLHIT);
 							layers[j].walls[i].tintOffset += D3DXCOLOR(.5,.5,.5,0);
 							if(layers[j].wallHealth[i] == 0)
 								layers[j].walls[i].setInActive();
@@ -682,7 +682,7 @@ void CrateApp::updateScene(float dt)
 			//UPDATE THE RESTART SCREEN CUBE
 			if(GetAsyncKeyState(VK_RETURN) & 0x8000) 
 			{
-				audio->playCue(LASER);
+				//audio->playCue(LASER);
 				state = game;
 				reinitialize();
 			}
@@ -693,7 +693,7 @@ void CrateApp::updateScene(float dt)
 		{
 			if(GetAsyncKeyState(VK_RETURN) & 0x8000) 
 			{
-				audio->playCue(LASER);
+				//audio->playCue(LASER);
 				state = game;
 				reinitialize();
 			}
@@ -704,7 +704,7 @@ void CrateApp::updateScene(float dt)
 			//UPDATE CUBE FOR ENDING SPLASHSCREEN
 			if(!enterPressedLastFrame && GetAsyncKeyState(VK_RETURN) & 0x8000) 
 			{
-				audio->stopCue(ENDMUSIC);
+				//audio->stopCue(ENDMUSIC);
 				state = intro;
 				level = 1;
 				enterPressedLastFrame = true;
