@@ -316,11 +316,11 @@ void CrateApp::initApp()
 	layers[4] = Layer(rotationAxis::ZY, 5);
 	for(int i=0; i<NUM_WALLS; i++)
 	{
-		layers[0].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.1,1.7,1.7);
-		layers[1].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.7,.1,1.7);
-		layers[2].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.7,1.7,.1);
-		layers[3].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.7,1.7,.1);
-		layers[4].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.7,1.7,.1);
+		layers[0].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.1,WALL_SIZE,WALL_SIZE);
+		layers[1].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,WALL_SIZE,.1,WALL_SIZE);
+		layers[2].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,WALL_SIZE,WALL_SIZE,.1);
+		layers[3].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,WALL_SIZE,WALL_SIZE,.1);
+		layers[4].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,WALL_SIZE,WALL_SIZE,.1);
 		/*	layers[0].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.1,1.5,1.5);
 		layers[1].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.5,.1,1.5);
 		layers[2].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.5,1.5,.1);
@@ -346,6 +346,10 @@ void CrateApp::initApp()
 	//for(int i=0; i<3; i++)
 	//	bullet1[i].setInActive();
 	bulletObject.init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10, 1); // initialized as inactive	
+
+
+	//just for testing purposes -- remove later
+	laser.setInActive();
 }
 
 void CrateApp::onResize()
@@ -394,7 +398,7 @@ void CrateApp::reinitialize()
 	//laser.setInActive();
 	//laserTimer = 0;
 	laserTheta = (int)(mTheta+PI)%6;
-	laser.setActive();
+	//laser.setActive();
 
 	if(level==1)
 	{
@@ -517,7 +521,7 @@ void CrateApp::updateScene(float dt)
 			if(bossHealth == 0) boss.setInActive();*/
 			if(bulletObject.collided(&mesh))
 			{
-				bossHealth--;
+				//bossHealth--;
 				bulletObject.setInActive();
 				if(bossHealth == 0)
 				{
@@ -602,8 +606,8 @@ void CrateApp::updateScene(float dt)
 			}
 
 			//LASER COLLISION ON WALLS
-			//if(fireLaser)
-			//{
+			if(laser.getActiveState())
+			{
 				for(int j=0; j<NUM_LAYERS; j++)
 				{
 					for(int i=0; i<NUM_WALLS; i++)
@@ -629,7 +633,7 @@ void CrateApp::updateScene(float dt)
 						}
 					}
 				}
-			//}
+			}
 
 			regenerateWalls(dt);
 
@@ -894,7 +898,7 @@ void CrateApp::drawScene()
 			//LAYERS:
 			mfxDiffuseMapVar->SetResource(mDiffuseMapRV);
 			mfxSpecMapVar->SetResource(mSpecMapRV);
-			for(int i=0; i<3; i++)
+			for(int i=2; i<3; i++)
 			{
 				for(int j=0; j<NUM_WALLS; j++)
 				{
@@ -906,7 +910,7 @@ void CrateApp::drawScene()
 			}
 
 			//FOR DIAGONAL ROTATIONS:
-			for(int i=3; i<NUM_LAYERS; i++)
+			/*for(int i=3; i<NUM_LAYERS; i++)
 			{
 				for(int j=0; j<NUM_WALLS; j++)
 				{
@@ -915,7 +919,7 @@ void CrateApp::drawScene()
 					layers[i].walls[j].setMTech(mTech);
 					layers[i].walls[j].draw();
 				}
-			}
+			}*/
 
 
 			//bullet
