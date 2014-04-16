@@ -41,6 +41,8 @@ public:
 
 	void regenerateWalls(float dt);
 	void reinitialize();
+	void bulletWallCollision();
+	void laserWallCollision();
 
 private:
 	void buildFX();
@@ -321,11 +323,6 @@ void CrateApp::initApp()
 		layers[2].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,WALL_SIZE,WALL_SIZE,.1);
 		layers[3].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,WALL_SIZE,WALL_SIZE,.1);
 		layers[4].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,WALL_SIZE,WALL_SIZE,.1);
-		/*	layers[0].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.1,1.5,1.5);
-		layers[1].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.5,.1,1.5);
-		layers[2].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.5,1.5,.1);
-		layers[3].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.5,1.5,.1);
-		layers[4].walls[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1.5,1.5,.1);*/
 		layers[0].walls[i].mfxTintOffsetVar = mfxTintOffset;
 		layers[1].walls[i].mfxTintOffsetVar = mfxTintOffset;
 		layers[2].walls[i].mfxTintOffsetVar = mfxTintOffset;
@@ -349,7 +346,7 @@ void CrateApp::initApp()
 
 
 	//just for testing purposes -- remove later
-	laser.setInActive();
+	//laser.setInActive();
 }
 
 void CrateApp::onResize()
@@ -398,7 +395,7 @@ void CrateApp::reinitialize()
 	//laser.setInActive();
 	//laserTimer = 0;
 	laserTheta = (int)(mTheta+PI)%6;
-	//laser.setActive();
+	laser.setActive();
 
 	if(level==1)
 	{
@@ -514,14 +511,17 @@ void CrateApp::updateScene(float dt)
 			bulletObject.update(dt);
 			boss.update(dt);
 
+
+
 			//BULLET COLLISION ON BOSS
+
 			/*if(bulletObject.collided(&boss))
 			{
 			bossHealth--;
 			if(bossHealth == 0) boss.setInActive();*/
 			if(bulletObject.collided(&mesh))
 			{
-				//bossHealth--;
+				bossHealth--;
 				bulletObject.setInActive();
 				if(bossHealth == 0)
 				{
@@ -586,55 +586,13 @@ void CrateApp::updateScene(float dt)
 			}
 
 			//BULLET COLLISION ON WALLS
-			if(bulletObject.getActiveState())
-			{
-				for(int j=0; j<NUM_LAYERS; j++)
-				{
-					for(int i=0; i<NUM_WALLS; i++)
-					{
-						if(layers[j].walls[i].getActiveState() && ((abs(bulletObject.getTheta() - layers[j].thetas[i]) < .3) || (abs(bulletObject.getTheta() - 2*PI - layers[j].thetas[i]) < .3)) && (abs(bulletObject.getPhi() - layers[j].phis[i]) < .3) && (abs(bulletObject.getDistanceToOrigin() - layers[j].radius) < .5))
-						{
-							layers[j].wallHealth[i] --;
-							bulletObject.setInActive();
-							//audio->playCue(WALLHIT);
-							layers[j].walls[i].tintOffset += D3DXCOLOR(.5,.5,.5,0);
-							if(layers[j].wallHealth[i] == 0)
-								layers[j].walls[i].setInActive();
-						}
-					}
-				}
-			}
+			bulletWallCollision();
+			
 
 			//LASER COLLISION ON WALLS
-			if(laser.getActiveState())
-			{
-				for(int j=0; j<NUM_LAYERS; j++)
-				{
-					for(int i=0; i<NUM_WALLS; i++)
-					{
-						if(layers[j].walls[i].getActiveState())
-						{
-							//if laserTheta is close to either 0 or 2PI, ignore theta comparisons
-							if(laserPhi < .3 || laserPhi > 2.7)
-							{
-								if(abs(laserPhi - layers[j].phis[i]) < .3)
-								{
-									layers[j].walls[i].setInActive();
-								}
-							}
-							else
-							{
-								if((abs(laserTheta - layers[j].thetas[i]) < .3) && (abs(laserPhi - layers[j].phis[i]) < .3))
-									//if(layers[j].walls[i].getActiveState() && ((layers[j].thetas[i] > laserTheta) && (laserTheta + .3 > layers[j].thetas[i])) || ((layers[j].thetas[i] < laserTheta) && (layers[j].thetas[i] + .3 > laserTheta)))
-								{
-									layers[j].walls[i].setInActive();
-								}
-							}
-						}
-					}
-				}
-			}
+			laserWallCollision();
 
+			//REGENERATION OF WALLS:
 			regenerateWalls(dt);
 
 			//CONTROLS WHEN LASER DISPLAYS
@@ -732,6 +690,81 @@ void CrateApp::updateScene(float dt)
 	// Update position of spotlight based on eye position
 	mSpot.pos = mEyePos;
 	Normalize(&mSpot.dir, &(Vector3(0,0,0)-mEyePos));
+}
+
+void CrateApp::bulletWallCollision()
+{
+	if(bulletObject.getActiveState())
+		{
+			for(int j=0; j<NUM_LAYERS; j++)
+			{
+				for(int i=0; i<NUM_WALLS; i++)
+				{
+					if(layers[j].walls[i].getActiveState())
+					{
+						//if laserPhi is close to either 0 or PI, ignore theta comparisons
+						if(bulletObject.getPhi() < .3 || bulletObject.getPhi() > 2.7)
+						{
+							if((abs(bulletObject.getPhi() - layers[j].phis[i]) < .3) && (abs(bulletObject.getDistanceToOrigin() - layers[j].radius) < .5))
+							{
+								layers[j].wallHealth[i] --;
+								bulletObject.setInActive();
+								//audio->playCue(WALLHIT);
+								layers[j].walls[i].tintOffset += D3DXCOLOR(.5,.5,.5,0);
+								if(layers[j].wallHealth[i] == 0)
+									layers[j].walls[i].setInActive();
+								return;
+							}
+						}
+						else {
+							//if((abs(bulletObject.getTheta() - layers[j].thetas[i]) < .43) && (abs(bulletObject.getPhi() - layers[j].phis[i]) < .3) && (abs(bulletObject.getDistanceToOrigin() - layers[j].radius) < .5))
+							if(((abs(bulletObject.getTheta() - layers[j].thetas[i]) < .43) || (abs(bulletObject.getTheta() - 2*PI - layers[j].thetas[i]) < .3)) && (abs(bulletObject.getPhi() - layers[j].phis[i]) < .3) && (abs(bulletObject.getDistanceToOrigin() - layers[j].radius) < .5))
+							{
+								layers[j].wallHealth[i] --;
+								bulletObject.setInActive();
+								//audio->playCue(WALLHIT);
+								layers[j].walls[i].tintOffset += D3DXCOLOR(.5,.5,.5,0);
+								if(layers[j].wallHealth[i] == 0)
+									layers[j].walls[i].setInActive();
+								return;
+							}
+						}
+					}
+				}
+			}
+		}
+}
+
+void CrateApp::laserWallCollision()
+{
+	if(laser.getActiveState())
+		{
+			for(int j=0; j<NUM_LAYERS; j++)
+			{
+				for(int i=0; i<NUM_WALLS; i++)
+				{
+					if(layers[j].walls[i].getActiveState())
+					{
+						//if laserPhi is close to either 0 or PI, ignore theta comparisons
+						if(laserPhi < .3 || laserPhi > 2.7)
+						{
+							if(abs(laserPhi - layers[j].phis[i]) < .3)
+							{
+								layers[j].walls[i].setInActive();
+							}
+						}
+						else
+						{
+							if((abs(laserTheta - layers[j].thetas[i]) < .3) && (abs(laserPhi - layers[j].phis[i]) < .3))
+								//if(layers[j].walls[i].getActiveState() && ((layers[j].thetas[i] > laserTheta) && (laserTheta + .3 > layers[j].thetas[i])) || ((layers[j].thetas[i] < laserTheta) && (layers[j].thetas[i] + .3 > laserTheta)))
+							{
+								layers[j].walls[i].setInActive();
+							}
+						}
+					}
+				}
+			}
+		}
 }
 
 void CrateApp::regenerateWalls(float dt)
@@ -898,7 +931,7 @@ void CrateApp::drawScene()
 			//LAYERS:
 			mfxDiffuseMapVar->SetResource(mDiffuseMapRV);
 			mfxSpecMapVar->SetResource(mSpecMapRV);
-			for(int i=2; i<3; i++)
+			for(int i=0; i<3; i++)
 			{
 				for(int j=0; j<NUM_WALLS; j++)
 				{
@@ -910,7 +943,7 @@ void CrateApp::drawScene()
 			}
 
 			//FOR DIAGONAL ROTATIONS:
-			/*for(int i=3; i<NUM_LAYERS; i++)
+			for(int i=3; i<NUM_LAYERS; i++)
 			{
 				for(int j=0; j<NUM_WALLS; j++)
 				{
@@ -919,7 +952,7 @@ void CrateApp::drawScene()
 					layers[i].walls[j].setMTech(mTech);
 					layers[i].walls[j].draw();
 				}
-			}*/
+			}
 
 
 			//bullet
@@ -966,7 +999,7 @@ void CrateApp::drawScene()
 
 			std::wostringstream outs;   
 			outs.precision(3);
-			//outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\n\n laser phi: " << laserPhi << "\nlaser theta: " << laserTheta
+			//outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\nWall Phi: " << layers[2].phis[0] << "\nWall Theta: " << layers[2].thetas[0];
 			outs << L"Health: " << playerHealth;
 			stats = outs.str();
 			// We specify DT_NOCLIP, so we do not care about width/height of the rect.
