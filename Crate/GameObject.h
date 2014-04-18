@@ -33,6 +33,7 @@ public:
 	float getRadiusSquare() {return radiusSquared;}
 	float getRadius() {return radius;}
 	Matrix getWorldMatrix() {return world;}
+	void setWorldMatrix(Matrix m) {world = m;} 
 	void setScale(float s) {scaleX = s; scaleY=s; scaleZ=s; radiusSquared = (s*radius)*(s*radius);}
 	float getScale() {return scale;}
 	void setScaleX(float s) {scaleX=s;}

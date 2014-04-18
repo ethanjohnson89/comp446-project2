@@ -25,8 +25,10 @@
 #define NUM_WALLS 16
 //#define NUM_WALLS_LVL1 10
 #define NUM_LAYERS 5
-#define LASER_SPEED_LVL2 .005
+#define LASER_SPEED_LVL2 .005f
+#define LASER_SPEED_LVL1 .0015f
 #define WALL_SIZE 1.7
+#define PLAYER_RADIUS 25.0F
 
 enum State {intro, start, game, end, restart, nextLevel};
 //// Audio stuff

@@ -23,6 +23,7 @@
 #include <vector>
 #include <fstream>
 #include "audio.h"
+#include "Laser.h"
 
 // Utility functions for generating meshes
 std::vector<Vector3> generateSurfrev2D(float degreesY); // generates a x-z cross-sectional "slice" (of specified degrees around the y-axis) of a unit spherical shell (thickness 0.1)
@@ -56,7 +57,10 @@ private:
 	GameObject boss;
 	GameObject health[3];
 
-	GameObject laser;
+	//GameObject laser;
+	Laser laser;
+	Laser wallOfLasers[8];
+
 	Layer layers[NUM_LAYERS];
 
 	GameObject background[6];
@@ -114,15 +118,15 @@ private:
 	float mTheta;
 	float mPhi;
 
-	float laserTheta;
-	float laserPhi;
+	//float laserTheta;
+	//float laserPhi;
 
 	float spinAmount;
 
 	std::wstring stats;
 
-	bool fireLaser;
-	float laserTimer;
+	//bool fireLaser;
+	//float laserTimer;
 
 	int bossHealth;
 	float playerHealth;
@@ -163,7 +167,7 @@ CrateApp::CrateApp(HINSTANCE hInstance)
 	: D3DApp(hInstance), mFX(0), mTech(0), mfxWVPVar(0), mfxWorldVar(0), mfxEyePosVar(0),
 	mfxLightVar(0), mfxDiffuseMapVar(0), mfxSpecMapVar(0), mfxTexMtxVar(0), 
 	mVertexLayout(0), mDiffuseMapRV(0), mSpecMapRV(0), mEyePos(0.0f, 0.0f, 0.0f), 
-	mRadius(25.0f), mTheta(0.0f), mPhi(PI/2), spinAmount(0), fireLaser(false), laserTimer(0), bossHealth(3),
+	mRadius(PLAYER_RADIUS), mTheta(0.0f), mPhi(PI/2), spinAmount(0), bossHealth(3),
 	spacePressedLastFrame(false), level(1), bossDyingTimer(0), bossDead(false), enterPressedLastFrame(false),
 	introMusicTimer(0), playerHealth(100)
 {
@@ -172,8 +176,8 @@ CrateApp::CrateApp(HINSTANCE hInstance)
 	D3DXMatrixIdentity(&mProj);
 	D3DXMatrixIdentity(&mWVP); 
 
-	laserTheta = mTheta;
-	laserPhi = mPhi;
+	//laserTheta = mTheta;
+	//laserPhi = mPhi;
 
 	state = intro;
 }
@@ -295,11 +299,23 @@ void CrateApp::initApp()
 	boss.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1);
 	health[0].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(-10,0,10), 10,1);
 
-	laser.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2);
+	laser.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, mPhi, ((int)(mTheta+PI)%6));
 	laser.setOverrideColorVar(mfxOverrideColorFlag);
 	laser.setObjectColorVar(mfxObjectColor);
 	laser.setColor(D3DXCOLOR(1, 0, 0, 1));
+	laser.setActive();
+	//laser.setPhi(mPhi);
+	//laser.setTheta((int)(mTheta+PI)%6);
 	//laser.setInActive();
+
+	for(int i=0; i<8; i++)
+	{
+		wallOfLasers[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, i*PI/8, ((int)(mTheta+PI)%6));
+		wallOfLasers[i].setOverrideColorVar(mfxOverrideColorFlag);
+		wallOfLasers[i].setObjectColorVar(mfxObjectColor);
+		wallOfLasers[i].setColor(D3DXCOLOR(1, 0, 0, 1));
+		wallOfLasers[i].setActive();
+	}
 
 	//background init
 	background[0].init(&bullet, 1.0f, D3DXVECTOR3(100.0f,0.0f,0.0f), D3DXVECTOR3(0.0f,0.0f,0.0f), 0, 50);
@@ -335,7 +351,7 @@ void CrateApp::initApp()
 		layers[4].walls[i].tint = true;
 	}
 
-	laserTheta = (int)(mTheta+PI)%6;
+	
 
 	//bullet1[0].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.5,.05,.05);
 	//bullet1[1].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.05,.5,.05);
@@ -367,9 +383,19 @@ void CrateApp::reinitialize()
 	introMusicTimer = 0;
 	mPhi = PI/2;
 	mTheta = 0;
-	laserTheta = 0;
-	laserPhi = 0;
+	//laserTheta = 0;
+	//laserPhi = 0;
+	laser.setPhi(0);
+	laser.setTheta((int)(mTheta+PI)%6);
+	laser.setActive();
 	playerHealth = 100;
+
+	for(int i=0; i<8; i++)
+	{
+		wallOfLasers[i].setPhi(i*PI/8);
+		wallOfLasers[i].setTheta((int)(mTheta+PI)%6);
+		wallOfLasers[i].setActive();
+	}
 
 	//playerHealth = 
 	
@@ -394,16 +420,17 @@ void CrateApp::reinitialize()
 
 	//laser.setInActive();
 	//laserTimer = 0;
-	laserTheta = (int)(mTheta+PI)%6;
-	laser.setActive();
+	
 
 	if(level==1)
 	{
 		bossHealth = 3;
+		laser.setSpeed(LASER_SPEED_LVL1);
 	}
 	else if(level==2)
 	{
 		bossHealth = 5;
+		laser.setSpeed(LASER_SPEED_LVL2);
 	}
 
 	bossDyingTimer = 0;
@@ -567,7 +594,7 @@ void CrateApp::updateScene(float dt)
 			}
 
 			//LOSE
-			if(laser.getActiveState() && abs(laserTheta-mTheta)<.1 && abs(laserPhi-mPhi)<.1)
+			if(laser.getActiveState() && abs(laser.getTheta()-mTheta)<.1 && abs(laser.getPhi()-mPhi)<.1)
 			{
 				if(level==1)
 					playerHealth -= dt*75;
@@ -608,7 +635,8 @@ void CrateApp::updateScene(float dt)
 			else
 			{*/
 				laser.update(dt);
-				laserTimer += dt;
+				laser.trackPlayer(mTheta, mPhi);
+				//laserTimer += dt;
 				//at end of timer,set timer back to zero, set laser inactive
 				/*if(laserTimer > 100)
 				{
@@ -618,8 +646,13 @@ void CrateApp::updateScene(float dt)
 				}*/
 			//}
 
-			if( laserTheta < 0.01f )	laserTheta = 2*PI-.02f;
-			if( laserTheta > 2*PI-0.01f)	laserTheta = .02f;
+
+			for(int i=0; i<8; i++)
+			{
+				wallOfLasers[i].update(dt);
+				wallOfLasers[i].setTheta(wallOfLasers[i].getTheta()+LASER_SPEED_LVL1);
+			}
+
 
 			
 			// Update angles based on input to orbit camera around scene.
@@ -702,7 +735,7 @@ void CrateApp::bulletWallCollision()
 				{
 					if(layers[j].walls[i].getActiveState())
 					{
-						//if laserPhi is close to either 0 or PI, ignore theta comparisons
+						//if bullet Phi is close to either 0 or PI, ignore theta comparisons
 						if(bulletObject.getPhi() < .3 || bulletObject.getPhi() > 2.7)
 						{
 							if((abs(bulletObject.getPhi() - layers[j].phis[i]) < .3) && (abs(bulletObject.getDistanceToOrigin() - layers[j].radius) < .5))
@@ -746,16 +779,16 @@ void CrateApp::laserWallCollision()
 					if(layers[j].walls[i].getActiveState())
 					{
 						//if laserPhi is close to either 0 or PI, ignore theta comparisons
-						if(laserPhi < .3 || laserPhi > 2.7)
+						if(laser.getPhi() < .2 || laser.getPhi() > 2.9)
 						{
-							if(abs(laserPhi - layers[j].phis[i]) < .3)
+							if(abs(laser.getPhi() - layers[j].phis[i]) < .3)
 							{
 								layers[j].walls[i].setInActive();
 							}
 						}
 						else
 						{
-							if((abs(laserTheta - layers[j].thetas[i]) < .3) && (abs(laserPhi - layers[j].phis[i]) < .3))
+							if((abs(laser.getTheta() - layers[j].thetas[i]) < .2) && (abs(laser.getPhi() - layers[j].phis[i]) < .2))
 								//if(layers[j].walls[i].getActiveState() && ((layers[j].thetas[i] > laserTheta) && (laserTheta + .3 > layers[j].thetas[i])) || ((layers[j].thetas[i] < laserTheta) && (layers[j].thetas[i] + .3 > laserTheta)))
 							{
 								layers[j].walls[i].setInActive();
@@ -959,43 +992,20 @@ void CrateApp::drawScene()
 			bulletObject.setMTech(mTech);
 			bulletObject.draw(mfxWVPVar, mView*mProj);
 
-			//laser
-			//TRACKING:
-			if(level==2)
-			{
-				if(abs(laserTheta-mTheta)>.01)
-				{
-					if((laserTheta-mTheta > -PI && laserTheta-mTheta < 0) || (laserTheta-mTheta > PI)) laserTheta += LASER_SPEED_LVL2;
-					else laserTheta -= LASER_SPEED_LVL2;
-				}
-				if(abs(laserPhi-mPhi)>.01)
-				{
-					if(laserPhi > mPhi) laserPhi -= LASER_SPEED_LVL2;
-					else laserPhi += LASER_SPEED_LVL2;
-				}
-			}
-			else if(level==1)
-			{
-				if(abs(laserTheta-mTheta)>.01)
-				{
-					if((laserTheta-mTheta > -PI && laserTheta-mTheta < 0) || (laserTheta-mTheta > PI)) laserTheta += .0015f;
-					else laserTheta -= .0015f;
-				}
-				if(abs(laserPhi-mPhi)>.01)
-				{
-					if(laserPhi > mPhi) laserPhi -= .0015f;
-					else laserPhi += .0015f;
-				}
-			}
-			Matrix translateOut;
-			Matrix rotatePhi, rotateTheta;
-			RotateX(&rotatePhi, -laserPhi+PI/2);
-			RotateY(&rotateTheta, laserTheta);
-			Translate(&translateOut, 0, 0, -mRadius*2);
-			mWVP = laser.getWorldMatrix() *translateOut * rotatePhi * rotateTheta * mView*mProj;
+			
+			
+			mWVP = laser.getWorldMatrix() * mView*mProj;
 			mfxWVPVar->SetMatrix((float*)&mWVP);
 			laser.setMTech(mTech);
-			laser.draw();
+			laser.draw(mfxWVPVar, mView*mProj);
+
+			for(int i=0; i<8; i++)
+			{
+				mWVP = wallOfLasers[i].getWorldMatrix() * mView*mProj;
+				mfxWVPVar->SetMatrix((float*)&mWVP);
+				wallOfLasers[i].setMTech(mTech);
+				wallOfLasers[i].draw(mfxWVPVar, mView*mProj);
+			}
 
 			std::wostringstream outs;   
 			outs.precision(3);

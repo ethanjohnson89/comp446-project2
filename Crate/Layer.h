@@ -6,9 +6,6 @@
 #include "GameObject.h"
 #include "constants.h"
 
-#define NUM_WALLS 16
-#define NUM_LAYERS 5
-
 enum rotationAxis { X, Y, Z, YZ, ZY };
 
 struct Layer {

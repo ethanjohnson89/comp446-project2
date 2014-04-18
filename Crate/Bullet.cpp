@@ -115,13 +115,13 @@ void Bullet::update(float dt)
 	}
 
 
-	Matrix rotXM, rotYM, rotZM, transM, scaleM;
+	/*Matrix rotXM, rotYM, rotZM, transM, scaleM;
 	RotateX(&rotXM, rotX);
 	RotateY(&rotYM, rotY);
 	RotateZ(&rotZM, rotZ); 
 	Scale(&scaleM, scaleX, scaleY, scaleZ);
 	Translate(&transM, position.x, position.y, position.z);
-	world = scaleM * rotXM * rotYM * rotZM * transM;
+	world = scaleM * rotXM * rotYM * rotZM * transM;*/
 }
 
 void Bullet::shoot(Vector3 pos, Vector3 vel, float mTheta, float mPhi) {
