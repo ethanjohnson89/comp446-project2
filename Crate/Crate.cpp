@@ -60,8 +60,8 @@ private:
 
 	//GameObject laser;
 	Laser laser;
-	//Laser wallOfLasers[8];
-	Laser sentryLasers[5];
+	Laser wallOfLasers[8];
+	
 
 	Layer layers[NUM_LAYERS];
 
@@ -150,6 +150,7 @@ private:
 	// BOSS AND SENTRIES
 	Mesh mesh;
 	Mesh sentries[5];
+	Laser sentryLasers[5];
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
@@ -323,12 +324,20 @@ void CrateApp::initApp()
 		sentries[i].setOverrideColorVar(mfxOverrideColorFlag);
 		sentries[i].setObjectColorVar(mfxObjectColor);
 		sentries[i].setColor(D3DXCOLOR(1, 1, 1, 1));
-		//wallOfLasers[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, i*PI/8, ((int)(mTheta+PI)%6));
+		
 		sentryLasers[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,-10), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, PI/2, PI);
 		sentryLasers[i].setOverrideColorVar(mfxOverrideColorFlag);
 		sentryLasers[i].setObjectColorVar(mfxObjectColor);
 		sentryLasers[i].setColor(D3DXCOLOR(1, 0, 0, 1));
 		sentryLasers[i].setActive();
+	}
+	for(int i=0; i<8; i++)
+	{
+		wallOfLasers[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, i*PI/8, ((int)(mTheta+PI)%6));
+		wallOfLasers[i].setOverrideColorVar(mfxOverrideColorFlag);
+		wallOfLasers[i].setObjectColorVar(mfxObjectColor);
+		wallOfLasers[i].setColor(D3DXCOLOR(1, 0, 0, 1));
+		wallOfLasers[i].setActive();
 	}
 
 	//background init
@@ -505,8 +514,7 @@ void CrateApp::updateScene(float dt)
 		{
 			// DEBUG
 			mesh.update(dt);
-			for(int i=0; i<NUM_SENTRIES_LVL3; i++)
-				sentries[i].update(dt);
+			
 
 			for(int i=0; i<3; i++)
 				health[0].update(dt);
@@ -608,7 +616,8 @@ void CrateApp::updateScene(float dt)
 						reinitialize();
 						//audio->stopCue(LASER);
 						//audio->playCue(ENDMUSIC);
-						state = end;
+						level = 3;
+						state = nextLevel; //JUST FOR SAKE OF DEMO
 					}
 				}
 			}
@@ -620,10 +629,10 @@ void CrateApp::updateScene(float dt)
 					playerHealth -= dt*75;
 				else playerHealth -= dt*100;
 			}
-			else if(playerHealth < 100) {
+			/*else if(playerHealth < 100) {
 				if(level==1) playerHealth += dt*45;
 				else playerHealth += dt*10;
-			}
+			}*/
 			if(playerHealth > 100) playerHealth = 100;
 			if(playerHealth <= 0) 
 			{
@@ -667,12 +676,43 @@ void CrateApp::updateScene(float dt)
 			//}
 
 
-			for(int i=0; i<NUM_SENTRIES_LVL3; i++)
+			//for(int i=0; i<NUM_SENTRIES_LVL3; i++)
+			//{
+			//	sentryLasers[i].update(dt);
+			//	//sentryLasers[i].setTheta(sentryLasers[i].getTheta()+LASER_SPEED_LVL1);
+			//}
+
+			for(int i=0; i<8; i++)
 			{
-				sentryLasers[i].update(dt);
-				//sentryLasers[i].setTheta(sentryLasers[i].getTheta()+LASER_SPEED_LVL1);
+				wallOfLasers[i].update(dt);
+				wallOfLasers[i].setTheta(wallOfLasers[i].getTheta()+LASER_SPEED_LVL1);
 			}
 
+			if(level != 3)
+			{
+				for(int i=0; i<8; i++)
+					wallOfLasers[i].setInActive();
+			}
+
+			if(level == 3)
+			{
+				laser.setInActive();
+				for(int i=0; i<NUM_SENTRIES_LVL3; i++)
+					sentries[i].update(dt);
+				sentryLasers[0].update(dt);
+				for(int i=0; i<8; i++)
+				{
+					wallOfLasers[i].setActive();
+					if(wallOfLasers[i].getActiveState() && abs(wallOfLasers[i].getTheta()-mTheta)<.1 && abs(wallOfLasers[i].getPhi()-mPhi)<.1)
+					{
+						playerHealth -= dt*100;
+					}
+				}
+				if(sentryLasers[0].getActiveState() && abs(sentryLasers[0].getTheta()-mTheta)<.1 && abs(sentryLasers[0].getPhi()-mPhi)<.1)
+				{
+					playerHealth -= dt*100;
+				}
+			}
 
 			
 			// Update angles based on input to orbit camera around scene.
@@ -1028,18 +1068,32 @@ void CrateApp::drawScene()
 			bulletObject.draw(mfxWVPVar, mView*mProj);
 
 			
-			
-			mWVP = laser.getWorldMatrix() * mView*mProj;
-			mfxWVPVar->SetMatrix((float*)&mWVP);
-			laser.setMTech(mTech);
-			laser.draw(mfxWVPVar, mView*mProj);
+			if(level != 3)
+			{
+				mWVP = laser.getWorldMatrix() * mView*mProj;
+				mfxWVPVar->SetMatrix((float*)&mWVP);
+				laser.setMTech(mTech);
+				laser.draw(mfxWVPVar, mView*mProj);
+			}
 
+			
 			for(int i=0; i<NUM_SENTRIES_LVL3; i++)
 			{
 				mWVP = sentryLasers[i].getWorldMatrix() * mView*mProj;
 				mfxWVPVar->SetMatrix((float*)&mWVP);
 				sentryLasers[i].setMTech(mTech);
 				sentryLasers[i].draw(mfxWVPVar, mView*mProj);
+			}
+
+			if(level == 3)
+			{
+				for(int i=0; i<8; i++)
+				{
+					mWVP = wallOfLasers[i].getWorldMatrix() * mView*mProj;
+					mfxWVPVar->SetMatrix((float*)&mWVP);
+					wallOfLasers[i].setMTech(mTech);
+					wallOfLasers[i].draw(mfxWVPVar, mView*mProj);
+				}
 			}
 
 			std::wostringstream outs;   
