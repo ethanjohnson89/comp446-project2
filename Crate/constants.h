@@ -30,6 +30,8 @@
 #define WALL_SIZE 1.7
 #define PLAYER_RADIUS 25.0F
 
+#define NUM_SENTRIES_LVL3 1
+
 enum State {intro, start, game, end, restart, nextLevel};
 //// Audio stuff
 

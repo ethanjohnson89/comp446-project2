@@ -42,9 +42,12 @@ public:
 		vertices.push_back(face.p2);
 	}
 
-	void init(ID3D10Device* device, float r, Vector3 pos, Vector3 vel, float sp, float s)
+	void init(ID3D10Device* device, float r, Vector3 pos, Vector3 vel, float sp, float s, float p, float t)
 	{
 		md3dDevice = device;
+
+		phi = p;
+		theta = t;
 
 		radius = r * 1.01;
 		position = pos;
@@ -67,9 +70,12 @@ public:
 		HR(md3dDevice->CreateBuffer(&vbd, &vinitData, &mVB));
 	}
 
-	void init(ID3D10Device* device, float r, Vector3 pos, Vector3 vel, float sp, float sX, float sY, float sZ)
+	void init(ID3D10Device* device, float r, Vector3 pos, Vector3 vel, float sp, float sX, float sY, float sZ, float p, float t)
 	{
 		md3dDevice = device;
+
+		phi = p;
+		theta = t;
 
 		radius = r * 1.01;
 		position = pos;
@@ -97,10 +103,13 @@ public:
 
 	void update(float dt)
 	{
-		position += velocity*dt;
+		//make sure boss won't be affected by phi and theta
+
+
+		//position += velocity*dt;
 		Identity(&world);
 
-		spinAmountY += (dt * spinYSpeed);
+		/*spinAmountY += (dt * spinYSpeed);
 		if (spinAmountY>2*PI)
 			spinAmountY = 0;
 		rotY = spinAmountY;
@@ -111,7 +120,7 @@ public:
 		spinAmountZ += (dt * spinZSpeed);
 		if (spinAmountZ>2*PI)
 			spinAmountZ = 0;
-		rotZ = spinAmountZ;
+		rotZ = spinAmountZ;*/
 
 		Matrix center;
 		Translate(&center, -1, 0, 0); // to center the sphere at 0,0,0 before applying the world matrix (kind of a hack)
@@ -123,6 +132,16 @@ public:
 		Scale(&scaleM, scaleX, scaleY, scaleZ);
 		Translate(&transM, position.x, position.y, position.z);
 		world = scaleM * rotXM * rotYM * rotZM * transM * center;
+
+		if( theta < 0.01f )	theta = 2*PI-.02f;
+		if( theta > 2*PI-0.01f)	theta = .02f;
+
+		/*Matrix translateOut;
+		Matrix rotatePhi, rotateTheta;
+		RotateX(&rotatePhi, -phi+PI/2);
+		RotateY(&rotateTheta, theta);
+		Translate(&translateOut, 0, 0, -PLAYER_RADIUS*2);
+		world = center * translateOut * rotatePhi * rotateTheta;*/
 	}
 
 	void draw()
@@ -253,6 +272,8 @@ public:
 	float scaleX, scaleY, scaleZ, scale;
 	ID3D10EffectTechnique* mTech;
 	float rotX, rotY, rotZ;
+
+	float theta, phi;
 
 	bool overrideColor;
     D3DXCOLOR color;
