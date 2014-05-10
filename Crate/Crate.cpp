@@ -46,6 +46,7 @@ public:
 	void reinitialize();
 	void bulletWallCollision();
 	void laserWallCollision();
+	void bulletSentryCollision();
 
 private:
 	void buildFX();
@@ -321,15 +322,15 @@ void CrateApp::initApp()
 	for(int i=0; i<NUM_SENTRIES_LVL3; i++)
 	{
 		//SENTRY
-		sentries[i].init(md3dDevice, 1.0, Vector3(1,0,-10), Vector3(0,0,0), 0, 1, PI/2, PI);
+		sentries[i].init(md3dDevice, 1.0, Vector3(1,0,-SENTRY_RADIUS), Vector3(0,0,0), 0, 1, PI/2, PI);
 		sentries[i].setOverrideColorVar(mfxOverrideColorFlag);
 		sentries[i].setObjectColorVar(mfxObjectColor);
 		sentries[i].setColor(D3DXCOLOR(1, 1, 1, 1));
 		//wallOfLasers[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, i*PI/8, ((int)(mTheta+PI)%6));
-		sentryLasers[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,-10), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, PI/2, PI);
+		sentryLasers[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,-SENTRY_RADIUS), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, PI/2, PI);
 		sentryLasers[i].setOverrideColorVar(mfxOverrideColorFlag);
 		sentryLasers[i].setObjectColorVar(mfxObjectColor);
-		sentryLasers[i].setColor(D3DXCOLOR(1, 0, 0, 1));
+		sentryLasers[i].setColor(D3DXCOLOR(221/255.0f, 0, 1, 1));
 		sentryLasers[i].setActive();
 	}
 
@@ -416,7 +417,7 @@ void CrateApp::reinitialize()
 	{
 		//sentryLasers[i].setPhi(i*PI/8);
 		//sentryLasers[i].setTheta((int)(mTheta+PI)%6);
-		sentryLasers[i].setActive();
+		//sentryLasers[i].setActive();
 	}
 
 	//playerHealth = 
@@ -505,6 +506,10 @@ void CrateApp::updateScene(float dt)
 		}
 	case game:
 		{
+			//REMOVE THIS LATER -- FOR TESTING PURPOSES
+			laser.setInActive();
+
+
 			// DEBUG
 			mesh.update(dt);
 			for(int i=0; i<NUM_SENTRIES_LVL3; i++)
@@ -634,15 +639,17 @@ void CrateApp::updateScene(float dt)
 				//audio->stopCue(LASER);
 			}
 
-			//BULLET COLLISION ON WALLS
+			//BULLET COLLISION ON WALLS AND SENTRIES
 			bulletWallCollision();
-			
+			bulletSentryCollision();
 
 			//LASER COLLISION ON WALLS
 			laserWallCollision();
 
 			//REGENERATION OF WALLS:
 			regenerateWalls(dt);
+
+
 
 			//CONTROLS WHEN LASER DISPLAYS
 			/*if(!fireLaser)
@@ -669,16 +676,24 @@ void CrateApp::updateScene(float dt)
 			//}
 
 
-			//manually sets rotations for each sentry
+
+			//SENTRY ROTATION
 			sentryLasers[0].setTheta(sentryLasers[0].getTheta()+LASER_SPEED_LVL1);
 			//sentryLasers[0].setPhi(sentryLasers[0].getPhi()+.001);
 			sentryLasers[1].setTheta(sentryLasers[1].getTheta()+LASER_SPEED_LVL1);
-			sentryLasers[1].setPhi(sentryLasers[1].getPhi()+.001);
+	
+			float t = ToRadian(spinAmount*30) + PI/2; //PI/2 is "starting phi" for this sentry
+			int temp = static_cast<int>(t/(2*PI));
+			float tempPhi = t - static_cast<float>(temp)*(2*PI);
+			if(tempPhi > PI)
+				sentryLasers[1].setPhi(2*PI - tempPhi); //IF ON RIGHT SIDE GOING BACK UP
+			else 
+				sentryLasers[1].setPhi(tempPhi);
+
 			//Moves the sentries and their lasers
 			for(int i=0; i<NUM_SENTRIES_LVL3; i++)
 			{
 				sentryLasers[i].update(dt);
-				
 				sentries[i].setTheta(sentryLasers[i].getTheta());
 				sentries[i].setPhi(sentryLasers[i].getPhi());
 			}
@@ -753,6 +768,46 @@ void CrateApp::updateScene(float dt)
 	// Update position of spotlight based on eye position
 	mSpot.pos = mEyePos;
 	Normalize(&mSpot.dir, &(Vector3(0,0,0)-mEyePos));
+}
+
+void CrateApp::bulletSentryCollision()
+{
+	if(bulletObject.getActiveState())
+		{
+			for(int i=0; i<NUM_SENTRIES_LVL3; i++)
+			{
+				if(sentries[i].getActiveState())
+				{
+					//if bullet Phi is close to either 0 or PI, ignore theta comparisons
+					if(bulletObject.getPhi() < .3 || bulletObject.getPhi() > 2.7)
+					{
+						if((abs(bulletObject.getPhi() - sentryLasers[i].getPhi()) < .3) && (abs(bulletObject.getDistanceToOrigin() - SENTRY_RADIUS) < .5))
+						{
+							//decrease sentry health
+							bulletObject.setInActive();
+							//audio
+							//change color of sentry?
+							sentryLasers[i].setInActive();
+							sentries[i].setInActive();
+							return;
+						}
+					}
+					else {
+						//if((abs(bulletObject.getTheta() - layers[j].thetas[i]) < .43) && (abs(bulletObject.getPhi() - layers[j].phis[i]) < .3) && (abs(bulletObject.getDistanceToOrigin() - layers[j].radius) < .5))
+						if(((abs(bulletObject.getTheta() - sentryLasers[i].getTheta()) < .43) || (abs(bulletObject.getTheta() - 2*PI - sentryLasers[i].getTheta()) < .3)) && (abs(bulletObject.getPhi() - sentryLasers[i].getPhi()) < .3) && (abs(bulletObject.getDistanceToOrigin() - SENTRY_RADIUS) < .5))
+						{
+							//decrease sentry health
+							bulletObject.setInActive();
+							//audio
+							//change color of sentry?
+							sentryLasers[i].setInActive();
+							sentries[i].setInActive();
+							return;
+						}
+					}
+				}
+			}
+		}
 }
 
 void CrateApp::bulletWallCollision()
@@ -1054,8 +1109,9 @@ void CrateApp::drawScene()
 
 			std::wostringstream outs;   
 			outs.precision(3);
-			//outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\nWall Phi: " << layers[2].phis[0] << "\nWall Theta: " << layers[2].thetas[0];
-			outs << L"Health: " << playerHealth;
+			outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\nSentry Phi: " << sentryLasers[1].getPhi() << "\nSentry Theta: " << sentryLasers[1].getTheta();
+			//outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\nSentry Phi: " << layers[1].phis[1] << "\nSentry Theta: " << sentryLasers[1].getTheta();
+			//outs << L"Health: " << playerHealth;
 			stats = outs.str();
 			// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 			RECT R = {5, 5, 0, 0};

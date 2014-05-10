@@ -43,7 +43,7 @@ public:
 	//Matrix getWorldMatrix() {return world;}
 	
 	void setActive() {active = true;}
-	void setInActive() {active = false;}
+	void setInActive() {active = false; laser.setInActive();}
 	bool getActiveState() {return active;}
 	
 	

@@ -27,8 +27,10 @@ public:
 		Translate(&transM, position.x, position.y, position.z);
 		world = scaleM * rotXM * rotYM * rotZM * transM * center;*/
 
-		//if( theta < 0.01f )	theta = 2*PI-.02f;
-		//if( theta > 2*PI-0.01f)	theta = .02f;
+		if( theta < 0.01f )	theta = 2*PI-.02f;
+		if( theta > 2*PI-0.01f)	theta = .02f;
+		/*if(phi < 0.01f) phi = PI-.02f;
+		if(phi > PI-.01f) phi=.02f;*/
 
 		Matrix translateOut;
 		Matrix rotatePhi, rotateTheta;

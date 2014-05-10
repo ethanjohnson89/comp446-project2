@@ -32,6 +32,8 @@
 
 #define NUM_SENTRIES_LVL3 2
 
+#define SENTRY_RADIUS 10
+
 enum State {intro, start, game, end, restart, nextLevel};
 //// Audio stuff
 
