@@ -109,6 +109,7 @@
     <ClInclude Include="Layer.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Sentry.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="Splashscreen.h" />
     <ClInclude Include="Vertex.h" />

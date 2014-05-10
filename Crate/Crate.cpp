@@ -25,6 +25,7 @@
 #include "audio.h"
 #include "Laser.h"
 #include "Sphere.h"
+#include "Sentry.h"
 
 // Utility functions for generating meshes
 std::vector<Vector3> generateSurfrev2D(float degreesY); // generates a x-z cross-sectional "slice" (of specified degrees around the y-axis) of a unit spherical shell (thickness 0.1)
@@ -61,7 +62,7 @@ private:
 	//GameObject laser;
 	Laser laser;
 	//Laser wallOfLasers[8];
-	Laser sentryLasers[5];
+	
 
 	Layer layers[NUM_LAYERS];
 
@@ -149,7 +150,8 @@ private:
 
 	// BOSS AND SENTRIES
 	Mesh mesh;
-	Mesh sentries[5];
+	Sentry sentries[NUM_SENTRIES_LVL3];
+	Laser sentryLasers[NUM_SENTRIES_LVL3];
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
@@ -206,7 +208,7 @@ void CrateApp::initApp()
 	// DEBUG
 	std::vector<Vector3> output = generateSurfrev2D(180);
 	generateSurfrev3D(output, 360, mesh);
-	for(int i=0; i<5; i++)
+	for(int i=0; i<NUM_SENTRIES_LVL3; i++)
 		generateSurfrev3D(output, 360, sentries[i]);
 
 	D3DApp::initApp();
@@ -319,7 +321,7 @@ void CrateApp::initApp()
 	for(int i=0; i<NUM_SENTRIES_LVL3; i++)
 	{
 		//SENTRY
-		sentries[i].init(md3dDevice, 1.0, Vector3(1,0,10), Vector3(0,0,0), 0, 1, PI/2, PI);
+		sentries[i].init(md3dDevice, 1.0, Vector3(1,0,-10), Vector3(0,0,0), 0, 1, PI/2, PI);
 		sentries[i].setOverrideColorVar(mfxOverrideColorFlag);
 		sentries[i].setObjectColorVar(mfxObjectColor);
 		sentries[i].setColor(D3DXCOLOR(1, 1, 1, 1));
@@ -667,10 +669,18 @@ void CrateApp::updateScene(float dt)
 			//}
 
 
+			//manually sets rotations for each sentry
+			sentryLasers[0].setTheta(sentryLasers[0].getTheta()+LASER_SPEED_LVL1);
+			//sentryLasers[0].setPhi(sentryLasers[0].getPhi()+.001);
+			sentryLasers[1].setTheta(sentryLasers[1].getTheta()+LASER_SPEED_LVL1);
+			sentryLasers[1].setPhi(sentryLasers[1].getPhi()+.001);
+			//Moves the sentries and their lasers
 			for(int i=0; i<NUM_SENTRIES_LVL3; i++)
 			{
 				sentryLasers[i].update(dt);
-				//sentryLasers[i].setTheta(sentryLasers[i].getTheta()+LASER_SPEED_LVL1);
+				
+				sentries[i].setTheta(sentryLasers[i].getTheta());
+				sentries[i].setPhi(sentryLasers[i].getPhi());
 			}
 
 
