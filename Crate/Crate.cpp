@@ -141,6 +141,7 @@ private:
 	bool enterPressedLastFrame;
 
 	int level;
+	int sentriesRemaining;
 
 	State state;
 
@@ -153,6 +154,8 @@ private:
 	Mesh mesh;
 	Sentry sentries[NUM_SENTRIES_LVL3];
 	Laser sentryLasers[NUM_SENTRIES_LVL3];
+
+	int startingPhis[NUM_SENTRIES_LVL3];
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
@@ -177,7 +180,7 @@ CrateApp::CrateApp(HINSTANCE hInstance)
 	mVertexLayout(0), mDiffuseMapRV(0), mSpecMapRV(0), mEyePos(0.0f, 0.0f, 0.0f), 
 	mRadius(PLAYER_RADIUS), mTheta(0.0f), mPhi(PI/2), spinAmount(0), bossHealth(3),
 	spacePressedLastFrame(false), level(1), bossDyingTimer(0), bossDead(false), enterPressedLastFrame(false),
-	introMusicTimer(0), playerHealth(100)
+	introMusicTimer(0), playerHealth(100), sentriesRemaining(NUM_SENTRIES_LVL3)
 {
 	D3DXMatrixIdentity(&mCrateWorld);
 	D3DXMatrixIdentity(&mView);
@@ -319,6 +322,8 @@ void CrateApp::initApp()
 	//laser.setTheta((int)(mTheta+PI)%6);
 	//laser.setInActive();
 
+	startingPhis[0] = PI/2;
+	startingPhis[1] = PI/2;
 	for(int i=0; i<NUM_SENTRIES_LVL3; i++)
 	{
 		//SENTRY
@@ -567,13 +572,14 @@ void CrateApp::updateScene(float dt)
 			bulletObject.update(dt);
 			boss.update(dt);
 
+
 			//BULLET COLLISION ON BOSS
 
 			/*if(bulletObject.collided(&boss))
 			{
 			bossHealth--;
 			if(bossHealth == 0) boss.setInActive();*/
-			if(bulletObject.collided(&mesh))
+			if(sentriesRemaining == 0 && bulletObject.collided(&mesh))
 			{
 				bossHealth--;
 				bulletObject.setInActive();
@@ -678,17 +684,20 @@ void CrateApp::updateScene(float dt)
 
 
 			//SENTRY ROTATION
-			sentryLasers[0].setTheta(sentryLasers[0].getTheta()+LASER_SPEED_LVL1);
+			sentryLasers[0].setTheta(sentryLasers[0].getTheta()+LASER_SPEED_LVL1/2);
 			//sentryLasers[0].setPhi(sentryLasers[0].getPhi()+.001);
 			sentryLasers[1].setTheta(sentryLasers[1].getTheta()+LASER_SPEED_LVL1);
 	
-			float t = ToRadian(spinAmount*30) + PI/2; //PI/2 is "starting phi" for this sentry
-			int temp = static_cast<int>(t/(2*PI));
-			float tempPhi = t - static_cast<float>(temp)*(2*PI);
-			if(tempPhi > PI)
-				sentryLasers[1].setPhi(2*PI - tempPhi); //IF ON RIGHT SIDE GOING BACK UP
-			else 
-				sentryLasers[1].setPhi(tempPhi);
+			for(int i=0; i<NUM_SENTRIES_LVL3; i++)
+			{
+				float t = ToRadian(spinAmount*40) + startingPhis[i]; //PI/2 is "starting phi" for this sentry
+				int temp = static_cast<int>(t/(2*PI));
+				float tempPhi = t - static_cast<float>(temp)*(2*PI);
+				if(tempPhi > PI)
+					sentryLasers[1].setPhi(2*PI - tempPhi); //IF ON RIGHT SIDE GOING BACK UP
+				else 
+					sentryLasers[1].setPhi(tempPhi);
+			}
 
 			//Moves the sentries and their lasers
 			for(int i=0; i<NUM_SENTRIES_LVL3; i++)
@@ -789,6 +798,7 @@ void CrateApp::bulletSentryCollision()
 							//change color of sentry?
 							sentryLasers[i].setInActive();
 							sentries[i].setInActive();
+							sentriesRemaining--;
 							return;
 						}
 					}
@@ -802,6 +812,7 @@ void CrateApp::bulletSentryCollision()
 							//change color of sentry?
 							sentryLasers[i].setInActive();
 							sentries[i].setInActive();
+							sentriesRemaining--;
 							return;
 						}
 					}

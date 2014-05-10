@@ -66,33 +66,6 @@ void Laser::update(float dt)
 	RotateY(&rotateTheta, theta);
 	Translate(&translateOut, 0, 0, -PLAYER_RADIUS*2);
 	laser.setWorldMatrix(laser.getWorldMatrix() *translateOut * rotatePhi * rotateTheta);
-
-
-
-	//PUT LASER TRACKING HERE
-	//need to be able to differentiate whether we want this laser to be tracking or following the wall rotation pattern....
-
-
-	/*spinAmountY += (dt * spinYSpeed);
-	if (spinAmountY>2*PI)
-		spinAmountY = 0;
-	rotY = spinAmountY;
-	spinAmountX += (dt * spinXSpeed);
-	if (spinAmountX>2*PI)
-		spinAmountX = 0;
-	rotX = spinAmountX;
-	spinAmountZ += (dt * spinZSpeed);
-	if (spinAmountZ>2*PI)
-		spinAmountZ = 0;
-	rotZ = spinAmountZ;*/
-	
-	/*Matrix rotXM, rotYM, rotZM, transM, scaleM;
-	RotateX(&rotXM, rotX);
-	RotateY(&rotYM, rotY);
-	RotateZ(&rotZM, rotZ); 
-	Scale(&scaleM, scaleX, scaleY, scaleZ);
-	Translate(&transM, position.x, position.y, position.z);
-	world = scaleM * rotXM * rotYM * rotZM * transM;*/
 }
 
 void Laser::trackPlayer(float mTheta, float mPhi)
