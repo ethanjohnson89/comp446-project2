@@ -156,6 +156,9 @@ private:
 	Laser sentryLasers[NUM_SENTRIES_LVL3];
 
 	int startingPhis[NUM_SENTRIES_LVL3];
+	int phiSpeeds[NUM_SENTRIES_LVL3];
+	float pulseOnTime[NUM_SENTRIES_LVL3];
+	float pulseOffTime[NUM_SENTRIES_LVL3];
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
@@ -313,7 +316,7 @@ void CrateApp::initApp()
 	//boss.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1);
 	health[0].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(-10,0,10), 10,1);
 
-	laser.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, mPhi, ((int)(mTheta+PI)%6));
+	laser.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, mPhi, ((int)(mTheta+PI)%6), 0,0);
 	laser.setOverrideColorVar(mfxOverrideColorFlag);
 	laser.setObjectColorVar(mfxObjectColor);
 	laser.setColor(D3DXCOLOR(1, 0, 0, 1));
@@ -324,6 +327,12 @@ void CrateApp::initApp()
 
 	startingPhis[0] = PI/2;
 	startingPhis[1] = PI/2;
+	phiSpeeds[0] = 0;
+	phiSpeeds[1] = 40;
+	pulseOnTime[0] = 2.0f;
+	pulseOffTime[0] = .5;
+	pulseOnTime[1] = 3.0f;
+	pulseOffTime[1] = .4;
 	for(int i=0; i<NUM_SENTRIES_LVL3; i++)
 	{
 		//SENTRY
@@ -332,11 +341,12 @@ void CrateApp::initApp()
 		sentries[i].setObjectColorVar(mfxObjectColor);
 		sentries[i].setColor(D3DXCOLOR(1, 1, 1, 1));
 		//wallOfLasers[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, i*PI/8, ((int)(mTheta+PI)%6));
-		sentryLasers[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,-SENTRY_RADIUS), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, PI/2, PI);
+		sentryLasers[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,-SENTRY_RADIUS), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, PI/2, PI, pulseOnTime[i], pulseOffTime[i]);
 		sentryLasers[i].setOverrideColorVar(mfxOverrideColorFlag);
 		sentryLasers[i].setObjectColorVar(mfxObjectColor);
 		sentryLasers[i].setColor(D3DXCOLOR(221/255.0f, 0, 1, 1));
 		sentryLasers[i].setActive();
+		sentryLasers[i].setPulsing(true);
 	}
 
 	//background init
@@ -690,7 +700,7 @@ void CrateApp::updateScene(float dt)
 	
 			for(int i=0; i<NUM_SENTRIES_LVL3; i++)
 			{
-				float t = ToRadian(spinAmount*40) + startingPhis[i]; //PI/2 is "starting phi" for this sentry
+				float t = ToRadian(spinAmount*phiSpeeds[i]) + startingPhis[i];
 				int temp = static_cast<int>(t/(2*PI));
 				float tempPhi = t - static_cast<float>(temp)*(2*PI);
 				if(tempPhi > PI)
@@ -799,6 +809,7 @@ void CrateApp::bulletSentryCollision()
 							sentryLasers[i].setInActive();
 							sentries[i].setInActive();
 							sentriesRemaining--;
+							sentryLasers[i].setSentryDead(true);
 							return;
 						}
 					}
@@ -813,6 +824,7 @@ void CrateApp::bulletSentryCollision()
 							sentryLasers[i].setInActive();
 							sentries[i].setInActive();
 							sentriesRemaining--;
+							sentryLasers[i].setSentryDead(true);
 							return;
 						}
 					}

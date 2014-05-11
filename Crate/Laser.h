@@ -14,7 +14,7 @@ public:
 	void init(Box *b, float r, Vector3 pos, Vector3 vel, float sp, float sx, float sy, float sz);
 
 	//ALSO HAVE ONE THAT SETS INITIAL THETA AND PHIS
-	void init(Box *b, float r, Vector3 pos, Vector3 vel, float sp, float sx, float sy, float sz, float p, float t); //phi and theta
+	void init(Box *b, float r, Vector3 pos, Vector3 vel, float sp, float sx, float sy, float sz, float p, float t, float onTime, float offTime); //phi and theta
 
 	void draw(ID3D10EffectMatrixVariable *mfxWVPVar, D3DXMATRIX mViewProj);
 	void update(float dt);
@@ -45,6 +45,10 @@ public:
 	void setActive() {active = true;}
 	void setInActive() {active = false; laser.setInActive();}
 	bool getActiveState() {return active;}
+
+	void setPulsing(bool p) {pulsing=p;}
+	void setSentryDead(bool d) {sentryDead=d;}
+	
 	
 	
 	void setMTech(ID3D10EffectTechnique* m){mTech = m; laser.setMTech(m);}
@@ -103,6 +107,9 @@ private:
 	//float rotX, rotY, rotZ;
 
 	float phi, theta;
+
+	bool pulsing, laserOn, sentryDead;
+	float pulseOnTime, pulseOffTime, timer;
 
 	//float spinAmountX, spinAmountY, spinAmountZ;
 	//float spinXSpeed, spinYSpeed, spinZSpeed;
