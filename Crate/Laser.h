@@ -44,6 +44,7 @@ public:
 	bool getActiveState() {return laser.getActiveState();}
 
 	void setPulsing(bool p) {pulsing=p;}
+	bool getPulsing() {return pulsing;}
 	
 	void setPulseOnTime(float p) {pulseOnTime=p;}
 	float getPulseOnTime() {return pulseOnTime;}

@@ -20,7 +20,7 @@
 #define VectorCross D3DXVec3Cross
 
 #define Radius 25
-#define REGEN_TIME 1
+#define REGEN_TIME 2.5
 #define REGEN_TIME_LVL1 4
 #define NUM_WALLS 16
 //#define NUM_WALLS_LVL1 10
@@ -28,7 +28,7 @@
 #define LASER_SPEED_LVL2 .003f
 #define LASER_SPEED_LVL1 .0015f
 #define WALL_SIZE 1.7
-#define PLAYER_RADIUS 25.0F
+#define PLAYER_RADIUS 26.5f
 
 #define NUM_SENTRIES_LVL3 2
 
