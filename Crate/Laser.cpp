@@ -1,32 +1,14 @@
 #include "Laser.h"
 
+
 void Laser::init(Box *b, float r, Vector3 pos, Vector3 vel, float sp, float sX, float sY, float sZ)
 {
 	laser.init(b, r, pos, vel, sp, sX,  sY,  sZ);
 
 	active = false;
-	
-	//box = b;
-	//scaleX = sX;
-	//scaleY = sY;
-	//scaleZ = sZ;
-}
-void Laser::init(Box *b, float r, Vector3 pos, Vector3 vel, float sp, float sX, float sY, float sZ, float p, float t, float onTime, float offTime)
-{
-	laser.init(b, r, pos, vel, sp, sX,  sY,  sZ);
-
-	active = false;
-
-	phi = p;
-	theta = t;
 
 	pulsing = false;
 	laserOn = true;
-	sentryDead = false;
-
-	//change
-	pulseOnTime = onTime;
-	pulseOffTime = offTime;
 
 	timer = 0;
 
@@ -78,7 +60,7 @@ void Laser::update(float dt)
 	laser.setWorldMatrix(laser.getWorldMatrix() *translateOut * rotatePhi * rotateTheta);
 
 	//pulsing:
-	if(!sentryDead && pulsing)
+	if(pulsing)
 	{
 		if(laserOn)
 		{

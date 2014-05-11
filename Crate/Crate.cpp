@@ -152,13 +152,9 @@ private:
 
 	// BOSS AND SENTRIES
 	Mesh mesh;
-	Sentry sentries[NUM_SENTRIES_LVL3];
-	Laser sentryLasers[NUM_SENTRIES_LVL3];
+	Sentry sentries[4];
+	Laser sentryLasers[4];
 
-	int startingPhis[NUM_SENTRIES_LVL3];
-	int phiSpeeds[NUM_SENTRIES_LVL3];
-	float pulseOnTime[NUM_SENTRIES_LVL3];
-	float pulseOffTime[NUM_SENTRIES_LVL3];
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
@@ -183,7 +179,7 @@ CrateApp::CrateApp(HINSTANCE hInstance)
 	mVertexLayout(0), mDiffuseMapRV(0), mSpecMapRV(0), mEyePos(0.0f, 0.0f, 0.0f), 
 	mRadius(PLAYER_RADIUS), mTheta(0.0f), mPhi(PI/2), spinAmount(0), bossHealth(3),
 	spacePressedLastFrame(false), level(1), bossDyingTimer(0), bossDead(false), enterPressedLastFrame(false),
-	introMusicTimer(0), playerHealth(100), sentriesRemaining(NUM_SENTRIES_LVL3)
+	introMusicTimer(0), playerHealth(100), sentriesRemaining(4)
 {
 	D3DXMatrixIdentity(&mCrateWorld);
 	D3DXMatrixIdentity(&mView);
@@ -215,7 +211,7 @@ void CrateApp::initApp()
 	// DEBUG
 	std::vector<Vector3> output = generateSurfrev2D(180);
 	generateSurfrev3D(output, 360, mesh);
-	for(int i=0; i<NUM_SENTRIES_LVL3; i++)
+	for(int i=0; i<4; i++)
 		generateSurfrev3D(output, 360, sentries[i]);
 
 	D3DApp::initApp();
@@ -307,7 +303,7 @@ void CrateApp::initApp()
 	bullet.init(md3dDevice, 1.0f);
 
 	// BOSS
-	mesh.init(md3dDevice, 2.0, Vector3(1,0,0), Vector3(0,0,0), 0, 2, 0, 0); //phi and theta set to 0 -- boss won't use them
+	mesh.init(md3dDevice, 2.0, Vector3(1,0,0), Vector3(0,0,0), 0, 2);
 	mesh.setOverrideColorVar(mfxOverrideColorFlag);
 	mesh.setObjectColorVar(mfxObjectColor);
 	mesh.setColor(D3DXCOLOR(0, 1, 0, 1));
@@ -316,7 +312,9 @@ void CrateApp::initApp()
 	//boss.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1);
 	health[0].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(-10,0,10), 10,1);
 
-	laser.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, mPhi, ((int)(mTheta+PI)%6), 0,0);
+	laser.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2);
+	laser.setPhi(mPhi);
+	laser.setTheta((int)(mTheta+PI)%6);
 	laser.setOverrideColorVar(mfxOverrideColorFlag);
 	laser.setObjectColorVar(mfxObjectColor);
 	laser.setColor(D3DXCOLOR(1, 0, 0, 1));
@@ -325,29 +323,7 @@ void CrateApp::initApp()
 	//laser.setTheta((int)(mTheta+PI)%6);
 	//laser.setInActive();
 
-	startingPhis[0] = PI/2;
-	startingPhis[1] = PI/2;
-	phiSpeeds[0] = 0;
-	phiSpeeds[1] = 40;
-	pulseOnTime[0] = 2.0f;
-	pulseOffTime[0] = .5;
-	pulseOnTime[1] = 3.0f;
-	pulseOffTime[1] = .4;
-	for(int i=0; i<NUM_SENTRIES_LVL3; i++)
-	{
-		//SENTRY
-		sentries[i].init(md3dDevice, 1.0, Vector3(1,0,-SENTRY_RADIUS), Vector3(0,0,0), 0, 1, PI/2, PI);
-		sentries[i].setOverrideColorVar(mfxOverrideColorFlag);
-		sentries[i].setObjectColorVar(mfxObjectColor);
-		sentries[i].setColor(D3DXCOLOR(1, 1, 1, 1));
-		//wallOfLasers[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, i*PI/8, ((int)(mTheta+PI)%6));
-		sentryLasers[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,-SENTRY_RADIUS), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, PI/2, PI, pulseOnTime[i], pulseOffTime[i]);
-		sentryLasers[i].setOverrideColorVar(mfxOverrideColorFlag);
-		sentryLasers[i].setObjectColorVar(mfxObjectColor);
-		sentryLasers[i].setColor(D3DXCOLOR(221/255.0f, 0, 1, 1));
-		sentryLasers[i].setActive();
-		sentryLasers[i].setPulsing(true);
-	}
+	
 
 	//background init
 	background[0].init(&bullet, 1.0f, D3DXVECTOR3(100.0f,0.0f,0.0f), D3DXVECTOR3(0.0f,0.0f,0.0f), 0, 50);
@@ -383,24 +359,26 @@ void CrateApp::initApp()
 		layers[4].walls[i].tint = true;
 	}
 
-	
+	for(int i=0; i<4; i++)
+	{
+		//SENTRY
+		sentries[i].init(md3dDevice, 1.0, Vector3(1,0,-SENTRY_RADIUS), Vector3(0,0,0), 0, 1);
+		sentries[i].setOverrideColorVar(mfxOverrideColorFlag);
+		sentries[i].setObjectColorVar(mfxObjectColor);
+		sentries[i].setColor(D3DXCOLOR(1, 1, 1, 1));
+		//wallOfLasers[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, i*PI/8, ((int)(mTheta+PI)%6));
+		sentryLasers[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,-SENTRY_RADIUS), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2);
+		sentryLasers[i].setOverrideColorVar(mfxOverrideColorFlag);
+		sentryLasers[i].setObjectColorVar(mfxObjectColor);
+		sentryLasers[i].setColor(D3DXCOLOR(221/255.0f, 0, 1, 1));
 
-	//bullet1[0].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.5,.05,.05);
-	//bullet1[1].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.05,.5,.05);
-	//bullet1[2].init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10,.05,.05,.5);
-	//for(int i=0; i<3; i++)
-	//	bullet1[i].setInActive();
+		sentryLasers[i].setInActive();
+		sentries[i].setInActive();
+	}
+	
 	bulletObject.init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10, 1); // initialized as inactive	
 
-
-	/*sentry.init(md3dDevice, 1.0f, D3DXCOLOR(1,1,1,0), 5);
-	sentry.setPosition(Vector3(0,0,15));
-	sentry.setActive();*/
-
-
-
-	//just for testing purposes -- remove later
-	//laser.setInActive();
+	reinitialize();
 }
 
 void CrateApp::onResize()
@@ -421,33 +399,16 @@ void CrateApp::reinitialize()
 	introMusicTimer = 0;
 	mPhi = PI/2;
 	mTheta = 0;
-	//laserTheta = 0;
-	//laserPhi = 0;
 	laser.setPhi(0);
 	laser.setTheta((int)(mTheta+PI)%6);
 	laser.setActive();
 	playerHealth = 100;
-
-	for(int i=0; i<NUM_SENTRIES_LVL3; i++)
-	{
-		//sentryLasers[i].setPhi(i*PI/8);
-		//sentryLasers[i].setTheta((int)(mTheta+PI)%6);
-		//sentryLasers[i].setActive();
-	}
-
-	//playerHealth = 
+	 
 	
 	for(int j=0; j<NUM_LAYERS; j++)
 	{
 		for(int i=0; i<NUM_WALLS; i++)
 		{
-			//Matrix rotations[NUM_WALLS];
-			//Matrix spin, translate, diagonal;
-			//GameObject walls[NUM_WALLS];
-			//float thetas[NUM_WALLS];
-			//float phis[NUM_WALLS];
-			//float startingTheta[NUM_WALLS];
-			//float startingPhi[NUM_WALLS];
 			layers[j].regenTime[i] = 0;
 			layers[j].walls[i].setActive();
 			layers[j].wallHealth[i] = 2;
@@ -458,24 +419,122 @@ void CrateApp::reinitialize()
 
 	//laser.setInActive();
 	//laserTimer = 0;
-	
+
+	//boss stuff
+	bossDyingTimer = 0;
+	bossDead = false;
+	mesh.setActive();
+
+	bulletObject.setInActive();	
 
 	if(level==1)
 	{
 		bossHealth = 3;
-		laser.setSpeed(LASER_SPEED_LVL1);
+		laser.setInActive();
+		
+		sentriesRemaining = 2;
+		//sentry specifics for this level
+		sentryLasers[0].setStartingPhi(PI/2);
+		sentryLasers[1].setStartingPhi(PI/2);
+		sentryLasers[0].setPhi(PI/2);
+		sentryLasers[1].setPhi(PI/2);
+		sentryLasers[0].setTheta(0);
+		sentryLasers[1].setTheta(PI);
+		sentryLasers[0].setPhiSpeed(0);
+		sentryLasers[1].setPhiSpeed(40);
+		sentryLasers[0].setThetaSpeed(.0007);
+		sentryLasers[1].setThetaSpeed(.0015);
+		for(int i=0; i<2; i++)
+		{
+			sentryLasers[i].setInActive();
+			sentryLasers[i].setPulsing(false);
+			sentries[i].setActive();
+		}
 	}
 	else if(level==2)
 	{
 		bossHealth = 5;
 		laser.setSpeed(LASER_SPEED_LVL2);
+
+		//sentry specifics for this level
+		sentriesRemaining = 2;
+		sentryLasers[0].setStartingPhi(PI/2);
+		sentryLasers[1].setStartingPhi(PI/2);
+		sentryLasers[0].setPhi(PI/2);
+		sentryLasers[1].setPhi(PI/2);
+		sentryLasers[0].setTheta(0);
+		sentryLasers[1].setTheta(PI);
+		sentryLasers[0].setPhiSpeed(0);
+		sentryLasers[1].setPhiSpeed(40);
+		sentryLasers[0].setPulseOnTime(2.0f);
+		sentryLasers[0].setPulseOffTime(.5);
+		sentryLasers[1].setPulseOnTime(3.0f);
+		sentryLasers[1].setPulseOffTime(.4);
+		sentryLasers[0].setThetaSpeed(.0007);
+		sentryLasers[1].setThetaSpeed(.0015);
+		for(int i=0; i<2; i++)
+		{
+			sentryLasers[i].setActive();
+			sentryLasers[i].setPulsing(true);
+			sentries[i].setActive();
+		}
 	}
+	else if(level==3)
+	{
+		bossHealth = 5;
+		laser.setSpeed(LASER_SPEED_LVL2);
 
-	bossDyingTimer = 0;
-	bossDead = false;
-	mesh.setActive();
-	bulletObject.setInActive();
+		//sentry specifics for this level
+		sentriesRemaining = 2;
+		sentryLasers[0].setStartingPhi(PI/2);
+		sentryLasers[1].setStartingPhi(PI/2);
+		sentryLasers[0].setPhi(PI/2);
+		sentryLasers[1].setPhi(PI/2);
+		sentryLasers[0].setTheta(0);
+		sentryLasers[1].setTheta(PI);
+		sentryLasers[0].setPhiSpeed(0);
+		sentryLasers[1].setPhiSpeed(40);
+		sentryLasers[0].setPulseOnTime(2.0f);
+		sentryLasers[0].setPulseOffTime(.5);
+		sentryLasers[1].setPulseOnTime(3.0f);
+		sentryLasers[1].setPulseOffTime(.4);
+		sentryLasers[0].setThetaSpeed(.0007);
+		sentryLasers[1].setThetaSpeed(.0015);
+		for(int i=0; i<2; i++)
+		{
+			sentryLasers[i].setActive();
+			sentryLasers[i].setPulsing(true);
+			sentries[i].setActive();
+		}
+	}
+	else if(level==4)
+	{
+		bossHealth = 5;
+		laser.setSpeed(LASER_SPEED_LVL2);
 
+		//sentry specifics for this level
+		sentriesRemaining = 2;
+		sentryLasers[0].setStartingPhi(PI/2);
+		sentryLasers[1].setStartingPhi(PI/2);
+		sentryLasers[0].setPhi(PI/2);
+		sentryLasers[1].setPhi(PI/2);
+		sentryLasers[0].setTheta(0);
+		sentryLasers[1].setTheta(PI);
+		sentryLasers[0].setPhiSpeed(0);
+		sentryLasers[1].setPhiSpeed(40);
+		sentryLasers[0].setPulseOnTime(2.0f);
+		sentryLasers[0].setPulseOffTime(.5);
+		sentryLasers[1].setPulseOnTime(3.0f);
+		sentryLasers[1].setPulseOffTime(.4);
+		sentryLasers[0].setThetaSpeed(.0007);
+		sentryLasers[1].setThetaSpeed(.0015);
+		for(int i=0; i<2; i++)
+		{
+			sentryLasers[i].setActive();
+			sentryLasers[i].setPulsing(true);
+			sentries[i].setActive();
+		}
+	}
 }
 
 void CrateApp::updateScene(float dt)
@@ -522,12 +581,12 @@ void CrateApp::updateScene(float dt)
 	case game:
 		{
 			//REMOVE THIS LATER -- FOR TESTING PURPOSES
-			laser.setInActive();
+			//laser.setInActive();
 
 
 			// DEBUG
 			mesh.update(dt);
-			for(int i=0; i<NUM_SENTRIES_LVL3; i++)
+			for(int i=0; i<4; i++)
 				sentries[i].update(dt);
 
 			for(int i=0; i<3; i++)
@@ -619,16 +678,11 @@ void CrateApp::updateScene(float dt)
 				bossDyingTimer += dt;
 				if(bossDyingTimer > 2) //CHANGE TO LENGTH OF SOUND
 				{
-					if(level==1) 
-					{
-						level = 2;
-						reinitialize();
+					if(level==1 || level==2 || level==3) 
 						state = nextLevel;
-						
-					}
-					else if(level==2)
+					else if(level==4)
 					{
-						reinitialize();
+						//reinitialize();
 						//audio->stopCue(LASER);
 						//audio->playCue(ENDMUSIC);
 						state = end;
@@ -639,15 +693,26 @@ void CrateApp::updateScene(float dt)
 			//LOSE
 			if(laser.getActiveState() && abs(laser.getTheta()-mTheta)<.1 && abs(laser.getPhi()-mPhi)<.1)
 			{
-				if(level==1)
+				/*if(level==1)
 					playerHealth -= dt*75;
-				else playerHealth -= dt*100;
+				else playerHealth -= dt*100;*/
+				playerHealth -= dt*100;
 			}
-			else if(playerHealth < 100) {
+			for(int i=0; i<4; i++)
+			{
+				if(sentryLasers[i].getActiveState() && abs(sentryLasers[i].getTheta()-mTheta)<.1 && abs(sentryLasers[i].getPhi()-mPhi)<.1)
+				{
+					/*if(level==1)
+						playerHealth -= dt*75;
+					else playerHealth -= dt*100;*/
+					playerHealth -= dt*100;
+				}
+			}
+			/*else if(playerHealth < 100) {
 				if(level==1) playerHealth += dt*45;
 				else playerHealth += dt*10;
 			}
-			if(playerHealth > 100) playerHealth = 100;
+			if(playerHealth > 100) playerHealth = 100;*/
 			if(playerHealth <= 0) 
 			{
 				state = restart;
@@ -694,24 +759,23 @@ void CrateApp::updateScene(float dt)
 
 
 			//SENTRY ROTATION
-			sentryLasers[0].setTheta(sentryLasers[0].getTheta()+LASER_SPEED_LVL1/2);
-			//sentryLasers[0].setPhi(sentryLasers[0].getPhi()+.001);
-			sentryLasers[1].setTheta(sentryLasers[1].getTheta()+LASER_SPEED_LVL1);
 	
-			for(int i=0; i<NUM_SENTRIES_LVL3; i++)
+			for(int i=0; i<4; i++)
 			{
-				float t = ToRadian(spinAmount*phiSpeeds[i]) + startingPhis[i];
+				sentryLasers[i].setTheta(sentryLasers[i].getTheta()+sentryLasers[i].getThetaSpeed());
+
+				float t = ToRadian(spinAmount*sentryLasers[i].getPhiSpeed()) + sentryLasers[i].getStartingPhi();
 				int temp = static_cast<int>(t/(2*PI));
 				float tempPhi = t - static_cast<float>(temp)*(2*PI);
 				if(tempPhi > PI)
-					sentryLasers[1].setPhi(2*PI - tempPhi); //IF ON RIGHT SIDE GOING BACK UP
+					sentryLasers[i].setPhi(2*PI - tempPhi); //IF ON RIGHT SIDE GOING BACK UP
 				else 
-					sentryLasers[1].setPhi(tempPhi);
-			}
+					sentryLasers[i].setPhi(tempPhi);
+			//}
 
 			//Moves the sentries and their lasers
-			for(int i=0; i<NUM_SENTRIES_LVL3; i++)
-			{
+			//for(int i=0; i<NUM_SENTRIES_LVL3; i++)
+			//{
 				sentryLasers[i].update(dt);
 				sentries[i].setTheta(sentryLasers[i].getTheta());
 				sentries[i].setPhi(sentryLasers[i].getPhi());
@@ -753,6 +817,9 @@ void CrateApp::updateScene(float dt)
 			if(GetAsyncKeyState(VK_RETURN) & 0x8000) 
 			{
 				//audio->playCue(LASER);
+				if(level==1) level=2;
+				else if(level==2) level=3;
+				else if(level==3) level=4;
 				state = game;
 				reinitialize();
 			}
@@ -793,7 +860,7 @@ void CrateApp::bulletSentryCollision()
 {
 	if(bulletObject.getActiveState())
 		{
-			for(int i=0; i<NUM_SENTRIES_LVL3; i++)
+			for(int i=0; i<4; i++)
 			{
 				if(sentries[i].getActiveState())
 				{
@@ -809,13 +876,14 @@ void CrateApp::bulletSentryCollision()
 							sentryLasers[i].setInActive();
 							sentries[i].setInActive();
 							sentriesRemaining--;
-							sentryLasers[i].setSentryDead(true);
+							sentryLasers[i].setInActive();
+							sentryLasers[i].setPulsing(false);
 							return;
 						}
 					}
 					else {
 						//if((abs(bulletObject.getTheta() - layers[j].thetas[i]) < .43) && (abs(bulletObject.getPhi() - layers[j].phis[i]) < .3) && (abs(bulletObject.getDistanceToOrigin() - layers[j].radius) < .5))
-						if(((abs(bulletObject.getTheta() - sentryLasers[i].getTheta()) < .43) || (abs(bulletObject.getTheta() - 2*PI - sentryLasers[i].getTheta()) < .3)) && (abs(bulletObject.getPhi() - sentryLasers[i].getPhi()) < .3) && (abs(bulletObject.getDistanceToOrigin() - SENTRY_RADIUS) < .5))
+						if(((abs(bulletObject.getTheta() - sentryLasers[i].getTheta()) < .23) || (abs(bulletObject.getTheta() - 2*PI - sentryLasers[i].getTheta()) < .2)) && (abs(bulletObject.getPhi() - sentryLasers[i].getPhi()) < .2) && (abs(bulletObject.getDistanceToOrigin() - SENTRY_RADIUS) < .5))
 						{
 							//decrease sentry health
 							bulletObject.setInActive();
@@ -824,7 +892,8 @@ void CrateApp::bulletSentryCollision()
 							sentryLasers[i].setInActive();
 							sentries[i].setInActive();
 							sentriesRemaining--;
-							sentryLasers[i].setSentryDead(true);
+							sentryLasers[i].setInActive();
+							sentryLasers[i].setPulsing(false);
 							return;
 						}
 					}
@@ -917,7 +986,7 @@ void CrateApp::regenerateWalls(float dt)
 			if(!layers[i].walls[j].getActiveState())
 			{
 				layers[i].regenTime[j] += dt;
-				if(level==2)
+				if(level==2 || level==3 || level==4)
 				{
 					if(layers[i].regenTime[j] > REGEN_TIME)
 					{
@@ -1041,26 +1110,19 @@ void CrateApp::drawScene()
 	case game:
 		{
 			//BOSS
-			/*mWVP = boss.getWorldMatrix() *mView*mProj;
-			mfxWVPVar->SetMatrix((float*)&mWVP);
-			boss.setMTech(mTech);
-			boss.draw();*/
 			mWVP = mesh.getWorldMatrix() * mView * mProj;
 			mfxWVPVar->SetMatrix((float*)&mWVP);
 			mesh.setMTech(mTech);
 			mesh.draw();
 
 			//SENTRY
-			for(int i=0; i<NUM_SENTRIES_LVL3; i++)
+			for(int i=0; i<4; i++)
 				{
 				mWVP = sentries[i].getWorldMatrix() * mView * mProj;
 				mfxWVPVar->SetMatrix((float*)&mWVP);
 				sentries[i].setMTech(mTech);
 				sentries[i].draw();
 			}
-
-			//Matrix s;
-			//RotateY(&s, PI/4);
 
 			//HEALTH BAR:
 			//Matrix rphi, rtheta;
@@ -1074,15 +1136,6 @@ void CrateApp::drawScene()
 			health[i].setMTech(mTech);
 			health[i].draw();
 			}*/
-
-			//Matrix s;
-			//RotateY(&s, PI/4);
-
-			//SENTRY DRAW:
-			/*mWVP = sentry.getWorldMatrix() * mView*mProj;
-			mfxWVPVar->SetMatrix((float*)&mWVP);
-			sentry.draw(&mView, &mProj, mFX, mTech);*/
-
 
 			//LAYERS:
 			mfxDiffuseMapVar->SetResource(mDiffuseMapRV);
@@ -1122,7 +1175,7 @@ void CrateApp::drawScene()
 			laser.setMTech(mTech);
 			laser.draw(mfxWVPVar, mView*mProj);
 
-			for(int i=0; i<NUM_SENTRIES_LVL3; i++)
+			for(int i=0; i<4; i++)
 			{
 				mWVP = sentryLasers[i].getWorldMatrix() * mView*mProj;
 				mfxWVPVar->SetMatrix((float*)&mWVP);
@@ -1132,9 +1185,9 @@ void CrateApp::drawScene()
 
 			std::wostringstream outs;   
 			outs.precision(3);
-			outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\nSentry Phi: " << sentryLasers[1].getPhi() << "\nSentry Theta: " << sentryLasers[1].getTheta();
+			//outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\nSentry Phi: " << sentryLasers[1].getPhi() << "\nSentry Theta: " << sentryLasers[1].getTheta();
 			//outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\nSentry Phi: " << layers[1].phis[1] << "\nSentry Theta: " << sentryLasers[1].getTheta();
-			//outs << L"Health: " << playerHealth;
+			outs << L"Health: " << playerHealth;
 			stats = outs.str();
 			// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 			RECT R = {5, 5, 0, 0};

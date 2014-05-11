@@ -42,12 +42,9 @@ public:
 		vertices.push_back(face.p2);
 	}
 
-	void init(ID3D10Device* device, float r, Vector3 pos, Vector3 vel, float sp, float s, float p, float t)
+	void init(ID3D10Device* device, float r, Vector3 pos, Vector3 vel, float sp, float s)
 	{
 		md3dDevice = device;
-
-		phi = p;
-		theta = t;
 
 		radius = r * 1.01;
 		position = pos;
@@ -70,12 +67,9 @@ public:
 		HR(md3dDevice->CreateBuffer(&vbd, &vinitData, &mVB));
 	}
 
-	void init(ID3D10Device* device, float r, Vector3 pos, Vector3 vel, float sp, float sX, float sY, float sZ, float p, float t)
+	void init(ID3D10Device* device, float r, Vector3 pos, Vector3 vel, float sp, float sX, float sY, float sZ)
 	{
 		md3dDevice = device;
-
-		phi = p;
-		theta = t;
 
 		radius = r * 1.01;
 		position = pos;

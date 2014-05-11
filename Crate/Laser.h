@@ -13,9 +13,6 @@ public:
 	//this might not actually be used?
 	void init(Box *b, float r, Vector3 pos, Vector3 vel, float sp, float sx, float sy, float sz);
 
-	//ALSO HAVE ONE THAT SETS INITIAL THETA AND PHIS
-	void init(Box *b, float r, Vector3 pos, Vector3 vel, float sp, float sx, float sy, float sz, float p, float t, float onTime, float offTime); //phi and theta
-
 	void draw(ID3D10EffectMatrixVariable *mfxWVPVar, D3DXMATRIX mViewProj);
 	void update(float dt);
 
@@ -44,54 +41,23 @@ public:
 	
 	void setActive() {active = true;}
 	void setInActive() {active = false; laser.setInActive();}
-	bool getActiveState() {return active;}
+	bool getActiveState() {return laser.getActiveState();}
 
 	void setPulsing(bool p) {pulsing=p;}
-	void setSentryDead(bool d) {sentryDead=d;}
 	
-	
+	void setPulseOnTime(float p) {pulseOnTime=p;}
+	float getPulseOnTime() {return pulseOnTime;}
+	void setPulseOffTime(float p) {pulseOffTime=p;}
+	float getPulseOffTime() {return pulseOffTime;}
+	void setStartingPhi(float p) {startingPhi=p;}
+	float getStartingPhi() {return startingPhi;}
+	void setPhiSpeed(float p) {phiSpeed=p;}
+	float getPhiSpeed() {return phiSpeed;}
+	void setThetaSpeed(float p) {thetaSpeed=p;}
+	float getThetaSpeed() {return thetaSpeed;}
 	
 	void setMTech(ID3D10EffectTechnique* m){mTech = m; laser.setMTech(m);}
-
-
-	/*void setRotXSpeed(float r) {
-		spinXSpeed = r;
-		for(int i=0; i<3;i++)
-			pieces[i].setRotXSpeed(r);}
-	void setRotYSpeed(float r) {
-		spinYSpeed = r;
-		for(int i=0; i<3;i++)
-			pieces[i].setRotYSpeed(r);}
-	void setRotZSpeed(float r) {
-		spinZSpeed = r;
-		for(int i=0; i<3;i++)
-			pieces[i].setRotZSpeed(r);}*/
-	/*float getRotXSpeed() {return spinXSpeed;}
-	float getRotYSpeed() {return spinYSpeed;}
-	float getRotZSpeed() {return spinZSpeed;}
-	float getRotX() {return rotX;}
-	float getRotY() {return rotY;}
-	float getRotZ() {return rotZ;}*/
-	//float getRotX() {return rotX;}
-	//float getRotY() {return rotY;}
-	//float getRotZ() {return rotZ;}
-	/*void setRotX(float r) {
-		rotX = r;
-		for(int i=0; i<3;i++)
-			pieces[i].setRotX(r);}
-	void setRotY(float r) {
-		rotX = r;
-		for(int i=0; i<3;i++)
-			pieces[i].setRotY(r);}
-	void setRotZ(float r) {
-		rotX = r;
-		for(int i=0; i<3;i++)
-			pieces[i].setRotZ(r);}*/
-
 	
-	
-
-
 	void setColor(D3DXCOLOR c) {laser.setColor(c);}
     D3DXCOLOR getColor() { return laser.getColor(); }
     void setOverrideColorVar(ID3D10EffectVariable *v) {laser.setOverrideColorVar(v);} 
@@ -108,13 +74,9 @@ private:
 
 	float phi, theta;
 
-	bool pulsing, laserOn, sentryDead;
+	bool pulsing, laserOn;
 	float pulseOnTime, pulseOffTime, timer;
-
-	//float spinAmountX, spinAmountY, spinAmountZ;
-	//float spinXSpeed, spinYSpeed, spinZSpeed;
-
-	//Matrix r;
+	float startingPhi, phiSpeed, thetaSpeed;
 
 	/*bool overrideColor;
     D3DXCOLOR color;
