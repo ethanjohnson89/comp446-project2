@@ -47,6 +47,7 @@ public:
 	void bulletWallCollision();
 	void laserWallCollision();
 	void bulletSentryCollision();
+	void rotateSentries(float dt);
 
 private:
 	void buildFX();
@@ -378,6 +379,8 @@ void CrateApp::initApp()
 	
 	bulletObject.init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10, 1); // initialized as inactive	
 
+	level = 4;
+
 	reinitialize();
 }
 
@@ -435,43 +438,47 @@ void CrateApp::reinitialize()
 		sentriesRemaining = 2;
 		//sentry specifics for this level
 		sentryLasers[0].setStartingPhi(PI/2);
-		sentryLasers[1].setStartingPhi(PI/2);
+		sentryLasers[1].setStartingPhi(PI);
 		sentryLasers[0].setPhi(PI/2);
-		sentryLasers[1].setPhi(PI/2);
-		sentryLasers[0].setTheta(0);
-		sentryLasers[1].setTheta(PI);
+		sentryLasers[1].setPhi(PI);
+		sentryLasers[0].setTheta(7*PI/4);
 		sentryLasers[0].setPhiSpeed(0);
 		sentryLasers[1].setPhiSpeed(40);
-		sentryLasers[0].setThetaSpeed(.0007);
-		sentryLasers[1].setThetaSpeed(.0015);
+		sentryLasers[0].setThetaSpeed(.0015);
+
+		sentryLasers[0].setPulseOnTime(.5);
+		sentryLasers[0].setPulseOffTime(1.8);
+		sentryLasers[1].setPulseOnTime(.7);
+		sentryLasers[1].setPulseOffTime(2.2);
+
 		for(int i=0; i<2; i++)
 		{
-			sentryLasers[i].setInActive();
-			sentryLasers[i].setPulsing(false);
+			sentryLasers[i].setActive();
+			sentryLasers[i].setPulsing(true);
 			sentries[i].setActive();
 		}
 	}
 	else if(level==2)
 	{
-		bossHealth = 5;
-		laser.setSpeed(LASER_SPEED_LVL2);
+		bossHealth = 3;
+		laser.setSpeed(LASER_SPEED_LVL1);
 
 		//sentry specifics for this level
 		sentriesRemaining = 2;
 		sentryLasers[0].setStartingPhi(PI/2);
-		sentryLasers[1].setStartingPhi(PI/2);
+		sentryLasers[1].setStartingPhi(PI);
 		sentryLasers[0].setPhi(PI/2);
-		sentryLasers[1].setPhi(PI/2);
-		sentryLasers[0].setTheta(0);
-		sentryLasers[1].setTheta(PI);
+		sentryLasers[1].setPhi(PI);
+		sentryLasers[0].setTheta(7*PI/4);
 		sentryLasers[0].setPhiSpeed(0);
 		sentryLasers[1].setPhiSpeed(40);
-		sentryLasers[0].setPulseOnTime(2.0f);
-		sentryLasers[0].setPulseOffTime(.5);
-		sentryLasers[1].setPulseOnTime(3.0f);
-		sentryLasers[1].setPulseOffTime(.4);
-		sentryLasers[0].setThetaSpeed(.0007);
-		sentryLasers[1].setThetaSpeed(.0015);
+		sentryLasers[0].setThetaSpeed(.0015);
+
+		sentryLasers[0].setPulseOnTime(1.1);
+		sentryLasers[0].setPulseOffTime(1.3);
+		sentryLasers[1].setPulseOnTime(1.4);
+		sentryLasers[1].setPulseOffTime(1.7);
+
 		for(int i=0; i<2; i++)
 		{
 			sentryLasers[i].setActive();
@@ -481,26 +488,37 @@ void CrateApp::reinitialize()
 	}
 	else if(level==3)
 	{
-		bossHealth = 5;
-		laser.setSpeed(LASER_SPEED_LVL2);
+		bossHealth = 4;
+		laser.setSpeed(LASER_SPEED_LVL1);
 
 		//sentry specifics for this level
-		sentriesRemaining = 2;
+		sentriesRemaining = 4;
 		sentryLasers[0].setStartingPhi(PI/2);
-		sentryLasers[1].setStartingPhi(PI/2);
+		sentryLasers[1].setStartingPhi(PI);
 		sentryLasers[0].setPhi(PI/2);
-		sentryLasers[1].setPhi(PI/2);
-		sentryLasers[0].setTheta(0);
-		sentryLasers[1].setTheta(PI);
+		sentryLasers[1].setPhi(PI);
+		sentryLasers[0].setTheta(7*PI/4);
 		sentryLasers[0].setPhiSpeed(0);
 		sentryLasers[1].setPhiSpeed(40);
-		sentryLasers[0].setPulseOnTime(2.0f);
-		sentryLasers[0].setPulseOffTime(.5);
-		sentryLasers[1].setPulseOnTime(3.0f);
-		sentryLasers[1].setPulseOffTime(.4);
-		sentryLasers[0].setThetaSpeed(.0007);
-		sentryLasers[1].setThetaSpeed(.0015);
-		for(int i=0; i<2; i++)
+		sentryLasers[0].setThetaSpeed(.0015);
+
+		sentryLasers[2].setStartingPhi(3*PI/2);
+		sentryLasers[3].setStartingPhi(PI/4);
+		sentryLasers[2].setPhi(3*PI/2);
+		sentryLasers[3].setPhi(PI/4);
+		sentryLasers[2].setPhiSpeed(40);
+		sentryLasers[3].setPhiSpeed(40);
+
+		sentryLasers[0].setPulseOnTime(1.4);
+		sentryLasers[0].setPulseOffTime(.7);
+		sentryLasers[1].setPulseOnTime(1.8);
+		sentryLasers[1].setPulseOffTime(1.1);
+		sentryLasers[2].setPulseOnTime(.9);
+		sentryLasers[2].setPulseOffTime(.6);
+		sentryLasers[3].setPulseOnTime(1);
+		sentryLasers[3].setPulseOffTime(.5);
+
+		for(int i=0; i<4; i++)
 		{
 			sentryLasers[i].setActive();
 			sentryLasers[i].setPulsing(true);
@@ -512,28 +530,43 @@ void CrateApp::reinitialize()
 		bossHealth = 5;
 		laser.setSpeed(LASER_SPEED_LVL2);
 
+		//TEMP for testing:
+		laser.setInActive();
+
+		sentriesRemaining = 4;
 		//sentry specifics for this level
-		sentriesRemaining = 2;
 		sentryLasers[0].setStartingPhi(PI/2);
-		sentryLasers[1].setStartingPhi(PI/2);
+		sentryLasers[1].setStartingPhi(PI);
 		sentryLasers[0].setPhi(PI/2);
-		sentryLasers[1].setPhi(PI/2);
-		sentryLasers[0].setTheta(0);
-		sentryLasers[1].setTheta(PI);
+		sentryLasers[1].setPhi(PI);
+		sentryLasers[0].setTheta(7*PI/4);
 		sentryLasers[0].setPhiSpeed(0);
 		sentryLasers[1].setPhiSpeed(40);
-		sentryLasers[0].setPulseOnTime(2.0f);
-		sentryLasers[0].setPulseOffTime(.5);
-		sentryLasers[1].setPulseOnTime(3.0f);
-		sentryLasers[1].setPulseOffTime(.4);
-		sentryLasers[0].setThetaSpeed(.0007);
-		sentryLasers[1].setThetaSpeed(.0015);
-		for(int i=0; i<2; i++)
+		sentryLasers[0].setThetaSpeed(.0015);
+
+		sentryLasers[2].setStartingPhi(3*PI/2);
+		sentryLasers[3].setStartingPhi(PI/4);
+		sentryLasers[2].setPhi(3*PI/2);
+		sentryLasers[3].setPhi(PI/4);
+		sentryLasers[2].setPhiSpeed(40);
+		sentryLasers[3].setPhiSpeed(40);
+
+		sentryLasers[0].setPulseOnTime(1.4);
+		sentryLasers[0].setPulseOffTime(.7);
+		sentryLasers[1].setPulseOnTime(1.8);
+		sentryLasers[1].setPulseOffTime(1.1);
+		sentryLasers[2].setPulseOnTime(.9);
+		sentryLasers[2].setPulseOffTime(.6);
+		sentryLasers[3].setPulseOnTime(1);
+		sentryLasers[3].setPulseOffTime(.5);
+
+		for(int i=0; i<4; i++)
 		{
 			sentryLasers[i].setActive();
-			sentryLasers[i].setPulsing(true);
+			sentryLasers[i].setPulsing(false);
 			sentries[i].setActive();
 		}
+		sentryLasers[0].setPulsing(true);
 	}
 }
 
@@ -594,17 +627,6 @@ void CrateApp::updateScene(float dt)
 
 			if(!spacePressedLastFrame && !bulletObject.getActiveState() && GetAsyncKeyState(' ') & 0x8000)
 			{
-				//if(!bullet1[0].getActiveState())
-				//{
-				//for(int i=0; i<3; i++)
-				//{
-				//	bullet1[i].setActive();
-				//	bullet1[i].setPosition(mEyePos);
-				//	//calculate velocity vector
-				//	Vector3 t(-mEyePos);
-				//	bullet1[i].setVelocity(t*2);
-				//}
-				//	}
 				bulletObject.shoot(mEyePos/2,2*Vector3(-mEyePos), mTheta, mPhi);
 				//audio->playCue(BULLETSHOOT);
 			}
@@ -627,17 +649,9 @@ void CrateApp::updateScene(float dt)
 			for(int i=0; i<NUM_LAYERS; i++)
 			{
 				for(int j=0; j<NUM_WALLS; j++)
-				{
 					layers[i].walls[j].update(dt);
-					/*if(bulletObject.collided(&layers[i].walls[j]))
-					{
-					layers[i].walls[j].setInActive();
-					}*/
-				}
 			}
 
-			//for(int i=0; i<3; i++)
-			//	bullet1[i].update(dt);
 			bulletObject.update(dt);
 			boss.update(dt);
 
@@ -700,12 +714,26 @@ void CrateApp::updateScene(float dt)
 			}
 			for(int i=0; i<4; i++)
 			{
-				if(sentryLasers[i].getActiveState() && abs(sentryLasers[i].getTheta()-mTheta)<.1 && abs(sentryLasers[i].getPhi()-mPhi)<.1)
+				//if laser Phi is close to either 0 or PI, ignore theta comparisons
+				if(sentryLasers[i].getPhi() < .3 || sentryLasers[i].getPhi() > 2.7)
 				{
-					/*if(level==1)
-						playerHealth -= dt*75;
-					else playerHealth -= dt*100;*/
-					playerHealth -= dt*100;
+					if(sentryLasers[i].getActiveState() && abs(sentryLasers[i].getPhi()-mPhi)<.1)
+					{
+						/*if(level==1)
+							playerHealth -= dt*75;
+						else playerHealth -= dt*100;*/
+						playerHealth -= dt*100;
+					}
+				}
+				else
+				{
+					if(sentryLasers[i].getActiveState() && abs(sentryLasers[i].getTheta()-mTheta)<.1 && abs(sentryLasers[i].getPhi()-mPhi)<.1)
+					{
+						/*if(level==1)
+							playerHealth -= dt*75;
+						else playerHealth -= dt*100;*/
+						playerHealth -= dt*100;
+					}
 				}
 			}
 			/*else if(playerHealth < 100) {
@@ -757,30 +785,8 @@ void CrateApp::updateScene(float dt)
 			//}
 
 
-
 			//SENTRY ROTATION
-	
-			for(int i=0; i<4; i++)
-			{
-				sentryLasers[i].setTheta(sentryLasers[i].getTheta()+sentryLasers[i].getThetaSpeed());
-
-				float t = ToRadian(spinAmount*sentryLasers[i].getPhiSpeed()) + sentryLasers[i].getStartingPhi();
-				int temp = static_cast<int>(t/(2*PI));
-				float tempPhi = t - static_cast<float>(temp)*(2*PI);
-				if(tempPhi > PI)
-					sentryLasers[i].setPhi(2*PI - tempPhi); //IF ON RIGHT SIDE GOING BACK UP
-				else 
-					sentryLasers[i].setPhi(tempPhi);
-			//}
-
-			//Moves the sentries and their lasers
-			//for(int i=0; i<NUM_SENTRIES_LVL3; i++)
-			//{
-				sentryLasers[i].update(dt);
-				sentries[i].setTheta(sentryLasers[i].getTheta());
-				sentries[i].setPhi(sentryLasers[i].getPhi());
-			}
-
+			rotateSentries(dt);
 
 			
 			// Update angles based on input to orbit camera around scene.
@@ -788,8 +794,6 @@ void CrateApp::updateScene(float dt)
 			if(GetAsyncKeyState('D') & 0x8000)	mTheta -= 3.0f*dt;
 			if(GetAsyncKeyState('W') & 0x8000)	mPhi -= 3.0f*dt;
 			if(GetAsyncKeyState('S') & 0x8000)	mPhi += 3.0f*dt;
-			//if(GetAsyncKeyState('Z') & 0x8000)	mRadius -= 15.0f*dt;
-			//if(GetAsyncKeyState('X') & 0x8000)	mRadius += 15.0f*dt;
 
 			// Restrict the angle mPhi.
 			if( mPhi < 0.1f )	mPhi = 0.1f;
@@ -856,6 +860,71 @@ void CrateApp::updateScene(float dt)
 	Normalize(&mSpot.dir, &(Vector3(0,0,0)-mEyePos));
 }
 
+void CrateApp::rotateSentries(float dt)
+{
+	for(int i=0; i<1; i++)
+	{
+		sentryLasers[i].setTheta(sentryLasers[i].getTheta()+sentryLasers[i].getThetaSpeed());
+		sentryLasers[i].update(dt);
+		sentries[i].setTheta(sentryLasers[i].getTheta());
+		sentries[i].setPhi(sentryLasers[i].getPhi());
+	}
+
+	for(int i=1; i<2; i++)
+	{
+		float t = ToRadian(spinAmount*sentryLasers[i].getPhiSpeed()) + sentryLasers[i].getStartingPhi();
+		int temp = static_cast<int>(t/(2*PI));
+		float tempPhi = t - static_cast<float>(temp)*(2*PI);
+		if(tempPhi >= PI) {
+			sentryLasers[i].setPhi(2*PI - tempPhi); //IF ON RIGHT SIDE GOING BACK UP
+			sentryLasers[i].setTheta(PI/2);
+		}
+		else {
+			sentryLasers[i].setPhi(tempPhi);
+			sentryLasers[i].setTheta(3*PI/2);
+		}
+		sentryLasers[i].update(dt);
+		sentries[i].setTheta(sentryLasers[i].getTheta());
+		sentries[i].setPhi(sentryLasers[i].getPhi());
+	}
+
+	for(int i=2; i<3; i++)
+	{
+		float t = ToRadian(spinAmount*sentryLasers[i].getPhiSpeed()) + sentryLasers[i].getStartingPhi();
+		int temp = static_cast<int>(t/(2*PI));
+		float tempPhi = t - static_cast<float>(temp)*(2*PI);
+		if(tempPhi >= PI) {
+			sentryLasers[i].setPhi(2*PI - tempPhi); //IF ON RIGHT SIDE GOING BACK UP
+			sentryLasers[i].setTheta(PI*1/4);
+		}
+		else {
+			sentryLasers[i].setPhi(tempPhi);
+			sentryLasers[i].setTheta(PI*5/4);
+		}
+		sentryLasers[i].update(dt);
+		sentries[i].setTheta(sentryLasers[i].getTheta());
+		sentries[i].setPhi(sentryLasers[i].getPhi());
+	}
+
+	for(int i=3; i<4; i++)
+	{
+		float t = ToRadian(spinAmount*sentryLasers[i].getPhiSpeed()) + sentryLasers[i].getStartingPhi();
+		int temp = static_cast<int>(t/(2*PI));
+		float tempPhi = t - static_cast<float>(temp)*(2*PI);
+		if(tempPhi >= PI) {
+			sentryLasers[i].setPhi(2*PI - tempPhi); //IF ON RIGHT SIDE GOING BACK UP
+			sentryLasers[i].setTheta(PI*3/4);
+		}
+		else {
+			sentryLasers[i].setPhi(tempPhi);
+			sentryLasers[i].setTheta(PI*7/4);
+		}
+		sentryLasers[i].update(dt);
+		sentries[i].setTheta(sentryLasers[i].getTheta());
+		sentries[i].setPhi(sentryLasers[i].getPhi());
+	}
+}
+
 void CrateApp::bulletSentryCollision()
 {
 	if(bulletObject.getActiveState())
@@ -876,8 +945,10 @@ void CrateApp::bulletSentryCollision()
 							sentryLasers[i].setInActive();
 							sentries[i].setInActive();
 							sentriesRemaining--;
-							sentryLasers[i].setInActive();
-							sentryLasers[i].setPulsing(false);
+							
+							if(level==4 && i<3)
+								sentryLasers[i+1].setPulsing(true);
+
 							return;
 						}
 					}
@@ -892,8 +963,10 @@ void CrateApp::bulletSentryCollision()
 							sentryLasers[i].setInActive();
 							sentries[i].setInActive();
 							sentriesRemaining--;
-							sentryLasers[i].setInActive();
-							sentryLasers[i].setPulsing(false);
+
+							if(level==4 && i<3)
+								sentryLasers[i+1].setPulsing(true);
+
 							return;
 						}
 					}

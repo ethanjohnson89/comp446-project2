@@ -39,7 +39,7 @@ public:
 	//float getSpeed() {return speed;}
 	//Matrix getWorldMatrix() {return world;}
 	
-	void setActive() {active = true;}
+	void setActive() {active = true; laser.setActive();}
 	void setInActive() {active = false; laser.setInActive();}
 	bool getActiveState() {return laser.getActiveState();}
 

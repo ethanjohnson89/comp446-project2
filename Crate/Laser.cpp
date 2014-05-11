@@ -60,7 +60,7 @@ void Laser::update(float dt)
 	laser.setWorldMatrix(laser.getWorldMatrix() *translateOut * rotatePhi * rotateTheta);
 
 	//pulsing:
-	if(pulsing)
+	if(active && pulsing)
 	{
 		if(laserOn)
 		{
