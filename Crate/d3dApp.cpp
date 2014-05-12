@@ -110,7 +110,7 @@ void D3DApp::initApp()
 	initDirect3D();
 
 	D3DX10_FONT_DESC fontDesc;
-	fontDesc.Height          = 24;
+	fontDesc.Height          = 36;
     fontDesc.Width           = 0;
     fontDesc.Weight          = 0;
     fontDesc.MipLevels       = 1;
@@ -119,7 +119,7 @@ void D3DApp::initApp()
     fontDesc.OutputPrecision = OUT_DEFAULT_PRECIS;
     fontDesc.Quality         = DEFAULT_QUALITY;
     fontDesc.PitchAndFamily  = DEFAULT_PITCH | FF_DONTCARE;
-    wcscpy(fontDesc.FaceName, L"Times New Roman");
+    wcscpy(fontDesc.FaceName, L"Eras Bold ITC");
 
 	D3DX10CreateFontIndirect(md3dDevice, &fontDesc, &mFont);
 }

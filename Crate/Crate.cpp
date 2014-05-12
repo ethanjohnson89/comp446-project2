@@ -49,6 +49,8 @@ public:
 	void bulletSentryCollision();
 	void rotateSentries(float dt);
 
+	void resetTip();
+
 private:
 	void buildFX();
 	void buildVertexLayouts();
@@ -146,8 +148,15 @@ private:
 
 	State state;
 
+	int timesDied;
+
 	float bossDyingTimer;
 	bool bossDead;
+
+	bool displayTip;
+	std::string tip;
+	float tipTime;
+	float tipLoc;
 
 	float introMusicTimer;
 
@@ -180,7 +189,7 @@ CrateApp::CrateApp(HINSTANCE hInstance)
 	mVertexLayout(0), mDiffuseMapRV(0), mSpecMapRV(0), mEyePos(0.0f, 0.0f, 0.0f), 
 	mRadius(PLAYER_RADIUS), mTheta(0.0f), mPhi(PI/2), spinAmount(0), bossHealth(3),
 	spacePressedLastFrame(false), level(1), bossDyingTimer(0), bossDead(false), enterPressedLastFrame(false),
-	introMusicTimer(0), playerHealth(100), sentriesRemaining(4)
+	introMusicTimer(0), playerHealth(100), sentriesRemaining(4), timesDied(0)
 {
 	D3DXMatrixIdentity(&mCrateWorld);
 	D3DXMatrixIdentity(&mView);
@@ -377,7 +386,10 @@ void CrateApp::initApp()
 		sentries[i].setInActive();
 	}
 	
-	bulletObject.init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10, 1); // initialized as inactive	
+	bulletObject.init(&bullet, 1, D3DXVECTOR3(7,1,7), D3DXVECTOR3(0,0,0), 10, 1); // initialized as inactive
+	bulletObject.setOverrideColorVar(mfxOverrideColorFlag);
+	bulletObject.setObjectColorVar(mfxObjectColor);
+	bulletObject.setColor(D3DXCOLOR(1, 1, 1, 1));
 
 	level = 1;
 
@@ -406,6 +418,8 @@ void CrateApp::reinitialize()
 	laser.setTheta((int)(mTheta+PI)%6);
 	laser.setActive();
 	playerHealth = 100;
+
+	resetTip();
 	 
 	
 	for(int j=0; j<NUM_LAYERS; j++)
@@ -420,8 +434,6 @@ void CrateApp::reinitialize()
 		}
 	}
 
-	//laser.setInActive();
-	//laserTimer = 0;
 
 	//boss stuff
 	bossDyingTimer = 0;
@@ -459,6 +471,8 @@ void CrateApp::reinitialize()
 			sentryLasers[i].setPulsing(true);
 			sentries[i].setActive();
 		}
+		for(int i=0; i<4; i++)
+			sentryLasers[i].setColor(D3DXCOLOR(102/255.0f, 1, 0, 1));
 
 		//for testing:
 		//sentryLasers[1].setInActive();
@@ -472,6 +486,10 @@ void CrateApp::reinitialize()
 	{
 		bossHealth = 3;
 		laser.setSpeed(LASER_SPEED_LVL1);
+
+		displayTip = true;
+		tip = "Tip: Shoot them while they're not firing";
+		
 
 		//sentry specifics for this level
 		sentriesRemaining = 2;
@@ -540,8 +558,8 @@ void CrateApp::reinitialize()
 		bossHealth = 5;
 		laser.setSpeed(LASER_SPEED_LVL2);
 
-		//TEMP for testing:
-		//laser.setInActive();
+		displayTip = true;
+		tip = "Tip: Destroy sentries in a certain order...";
 
 		sentriesRemaining = 4;
 		//sentry specifics for this level
@@ -575,8 +593,17 @@ void CrateApp::reinitialize()
 			sentryLasers[i].setActive();
 			sentryLasers[i].setPulsing(false);
 			sentries[i].setActive();
+			sentryLasers[i].setColor(D3DXCOLOR(1, 0, 0, 1));
 		}
 		sentryLasers[0].setPulsing(true);
+		sentryLasers[0].setColor(D3DXCOLOR(102/255.0f, 1, 0, 1));
+	}
+
+	//easter egg:
+	if(timesDied==8) 
+	{
+		tip="You've died like 8 times. Ever consider Minecraft?";
+		displayTip = true;
 	}
 }
 
@@ -647,6 +674,7 @@ void CrateApp::updateScene(float dt)
 			spinAmount += 1*dt;
 			if (spinAmount*10 > 360)
 				spinAmount = 0;
+
 
 			//UPDATE LAYERS:
 			for(int i=0; i<5; i++)
@@ -754,6 +782,7 @@ void CrateApp::updateScene(float dt)
 			if(playerHealth <= 0) 
 			{
 				state = restart;
+				timesDied++;
 				reinitialize();
 				//audio->stopCue(LASER);
 			}
@@ -798,6 +827,24 @@ void CrateApp::updateScene(float dt)
 			//SENTRY ROTATION
 			rotateSentries(dt);
 
+
+			//TIP STUFF
+			if(displayTip)
+			{
+				if(tipLoc < 400) tipLoc += 1400*dt;
+				else if(tipTime < 1.8) tipTime += dt;
+				else tipLoc += 1100*dt;
+				if(tipLoc > 1200) resetTip();
+			}
+
+			//easter egg
+			//3.14, .1
+			if(!displayTip && (mPhi <=.12 || mPhi >=3) && (GetAsyncKeyState('A') || GetAsyncKeyState('D')))
+			{
+				displayTip = true;
+				tip = "Do a barrel roll!";
+			}
+			
 			
 			// Update angles based on input to orbit camera around scene.
 			if(GetAsyncKeyState('A') & 0x8000)	mTheta += 3.0f*dt;
@@ -868,6 +915,13 @@ void CrateApp::updateScene(float dt)
 	// Update position of spotlight based on eye position
 	mSpot.pos = mEyePos;
 	Normalize(&mSpot.dir, &(Vector3(0,0,0)-mEyePos));
+}
+
+void CrateApp::resetTip()
+{
+	tipTime = 0;
+	tipLoc = -400; 
+	displayTip = false;
 }
 
 void CrateApp::rotateSentries(float dt)
@@ -941,7 +995,7 @@ void CrateApp::bulletSentryCollision()
 		{
 			for(int i=0; i<4; i++)
 			{
-				if(sentries[i].getActiveState())
+				if(sentries[i].getActiveState() && sentryLasers[i].getPulsing())
 				{
 					//if bullet Phi is close to either 0 or PI, ignore theta comparisons
 					if(bulletObject.getPhi() < .3 || bulletObject.getPhi() > 2.7)
@@ -957,17 +1011,10 @@ void CrateApp::bulletSentryCollision()
 							sentriesRemaining--;
 							
 							
-							if(level==4 && i<3)
-							//{
-							//	for(int j=i+1; j<4; j++)
-							//	{
-							//		if(sentryLasers[j].getPulsing()) 
-							//		{
-										sentryLasers[i+1].setPulsing(true);
-							//			break;
-							//		}
-							//	}
-							//}
+							if(level==4 && i<3) {
+								sentryLasers[i+1].setPulsing(true);
+								sentryLasers[i+1].setColor(D3DXCOLOR(102/255.0f, 1, 0, 1));
+							}
 
 							return;
 						}
@@ -984,8 +1031,10 @@ void CrateApp::bulletSentryCollision()
 							sentries[i].setInActive();
 							sentriesRemaining--;
 
-							if(level==4 && i<3)
+							if(level==4 && i<3) {
 								sentryLasers[i+1].setPulsing(true);
+								sentryLasers[i+1].setColor(D3DXCOLOR(102/255.0f, 1, 0, 1));
+							}
 
 							return;
 						}
@@ -1280,11 +1329,14 @@ void CrateApp::drawScene()
 			outs.precision(3);
 			//outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\nSentry Phi: " << sentryLasers[1].getPhi() << "\nSentry Theta: " << sentryLasers[1].getTheta();
 			//outs << L"Phi: " <<  mPhi << "\nTheta: " << mTheta << "\nSentry Phi: " << layers[1].phis[1] << "\nSentry Theta: " << sentryLasers[1].getTheta();
-			outs << L"Health: " << playerHealth;
+			//outs << L"Health: " << playerHealth;
+			outs << tip.c_str();
 			stats = outs.str();
 			// We specify DT_NOCLIP, so we do not care about width/height of the rect.
-			RECT R = {5, 5, 0, 0};
-			mFont->DrawText(0, stats.c_str(), -1, &R, DT_NOCLIP, WHITE);
+			RECT R = {tipLoc-tip.length()*7.5, 15, 0, 0};
+			if(displayTip)
+				//mFont->DrawText(0, stats.c_str(), -1, &R, DT_NOCLIP, D3DXCOLOR(1, 60/255.0f, 0, 1));
+				mFont->DrawText(0, stats.c_str(), -1, &R, DT_NOCLIP, D3DXCOLOR(1, 1, 1, 1));
 
 			//mSwapChain->Present(0, 0);
 			//state = restart;
