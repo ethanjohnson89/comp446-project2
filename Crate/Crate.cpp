@@ -160,9 +160,14 @@ private:
 
 	float introMusicTimer;
 
+	//Laser healthbar;
+	GameObject healthbar;
+
+	//Mesh scoreOrbs[NUM_LAYERS][NUM_WALLS];
+
+
 	// BOSS AND SENTRIES
 	Mesh mesh;
-	Mesh scoreOrbs[NUM_LAYERS][NUM_WALLS];
 	Sentry sentries[4];
 	Laser sentryLasers[4];
 
@@ -326,7 +331,7 @@ void CrateApp::initApp()
 	//boss.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1);
 	health[0].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(-10,0,10), 10,1);
 
-	laser.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2);
+	laser.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, -PLAYER_RADIUS*2);
 	laser.setPhi(mPhi);
 	laser.setTheta((int)(mTheta+PI)%6);
 	laser.setOverrideColorVar(mfxOverrideColorFlag);
@@ -338,6 +343,14 @@ void CrateApp::initApp()
 	//laser.setPhi(mPhi);
 	//laser.setTheta((int)(mTheta+PI)%6);
 	//laser.setInActive();
+
+	//HEALTHBAR (is actually a "laser")
+	healthbar.init(&bullet, sqrt(2.0f), D3DXVECTOR3(-13,0,3), D3DXVECTOR3(0,0,0), 0,.45,.05, 5*playerHealth/100.0f);
+	//healthbar.setPhi(mPhi);
+	//healthbar.setTheta(PI/2);
+	healthbar.setOverrideColorVar(mfxOverrideColorFlag);
+	healthbar.setObjectColorVar(mfxObjectColor);
+	healthbar.setColor(D3DXCOLOR(1, 0, 0, 1));
 
 	
 
@@ -383,7 +396,7 @@ void CrateApp::initApp()
 		sentries[i].setObjectColorVar(mfxObjectColor);
 		sentries[i].setColor(D3DXCOLOR(1, 1, 1, 1));
 		//wallOfLasers[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, i*PI/8, ((int)(mTheta+PI)%6));
-		sentryLasers[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,-SENTRY_RADIUS), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2);
+		sentryLasers[i].init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,-SENTRY_RADIUS), D3DXVECTOR3(0,0,0), 10,.05,.05,mRadius*2, -PLAYER_RADIUS*2);
 		sentryLasers[i].setOverrideColorVar(mfxOverrideColorFlag);
 		sentryLasers[i].setObjectColorVar(mfxObjectColor);
 		sentryLasers[i].setColor(D3DXCOLOR(102/255.0f, 1, 0, 1));
@@ -666,7 +679,9 @@ void CrateApp::updateScene(float dt)
 		{
 			//REMOVE THIS LATER -- FOR TESTING PURPOSES
 			//laser.setInActive();
-
+			
+			healthbar.update(dt);
+			healthbar.setScaleZ(5*playerHealth/100.0f);
 
 			// DEBUG
 			mesh.update(dt);
@@ -1329,11 +1344,21 @@ void CrateApp::drawScene()
 			bulletObject.draw(mfxWVPVar, mView*mProj);
 
 			
-			
+			//LASER
 			mWVP = laser.getWorldMatrix() * mView*mProj;
 			mfxWVPVar->SetMatrix((float*)&mWVP);
 			laser.setMTech(mTech);
 			laser.draw(mfxWVPVar, mView*mProj);
+
+			//HEALTHBAR
+			Matrix rotatePhi, rotateTheta;
+			RotateX(&rotatePhi, -mPhi);
+			RotateY(&rotateTheta, mTheta);
+			mWVP = healthbar.getWorldMatrix() * rotatePhi *rotateTheta *  mView*mProj;
+			mfxWVPVar->SetMatrix((float*)&mWVP);
+			healthbar.setMTech(mTech);
+			//healthbar.draw(mfxWVPVar, mView*mProj);
+			healthbar.draw();
 
 			for(int i=0; i<4; i++)
 			{

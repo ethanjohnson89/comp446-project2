@@ -11,7 +11,7 @@ public:
 	~Laser();
 	
 	//this might not actually be used?
-	void init(Box *b, float r, Vector3 pos, Vector3 vel, float sp, float sx, float sy, float sz);
+	void init(Box *b, float r, Vector3 pos, Vector3 vel, float sp, float sx, float sy, float sz, float trans);
 
 	void draw(ID3D10EffectMatrixVariable *mfxWVPVar, D3DXMATRIX mViewProj);
 	void update(float dt);
@@ -42,6 +42,8 @@ public:
 	void setActive() {active = true; laser.setActive();}
 	void setInActive() {active = false; laser.setInActive();}
 	bool getActiveState() {return laser.getActiveState();}
+
+	void setScaleZ(float s) {laser.setScaleZ(s);}
 
 	void setPulsing(bool p) {pulsing=p;}
 	bool getPulsing() {return pulsing;}
@@ -81,6 +83,7 @@ private:
 	bool pulsing, laserOn;
 	float pulseOnTime, pulseOffTime, timer;
 	float startingPhi, phiSpeed, thetaSpeed;
+	float translate;
 
 	/*bool overrideColor;
     D3DXCOLOR color;

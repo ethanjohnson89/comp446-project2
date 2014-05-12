@@ -1,9 +1,11 @@
 #include "Laser.h"
 
 
-void Laser::init(Box *b, float r, Vector3 pos, Vector3 vel, float sp, float sX, float sY, float sZ)
+void Laser::init(Box *b, float r, Vector3 pos, Vector3 vel, float sp, float sX, float sY, float sZ, float trans)
 {
 	laser.init(b, r, pos, vel, sp, sX,  sY,  sZ);
+
+	translate = trans;
 
 	active = false;
 
@@ -56,7 +58,7 @@ void Laser::update(float dt)
 	Matrix rotatePhi, rotateTheta;
 	RotateX(&rotatePhi, -phi+PI/2);
 	RotateY(&rotateTheta, theta);
-	Translate(&translateOut, 0, 0, -PLAYER_RADIUS*2);
+	Translate(&translateOut, 0, 0, translate);
 	laser.setWorldMatrix(laser.getWorldMatrix() *translateOut * rotatePhi * rotateTheta);
 
 	//pulsing:
