@@ -64,8 +64,11 @@ public:
     void setOverrideColorVar(ID3D10EffectVariable *v) {laser.setOverrideColorVar(v);} 
     void setObjectColorVar(ID3D10EffectVectorVariable *v) {laser.setObjectColorVar(v);}
 
+	void setAmbientOnly(bool ambOnly) { laser.setAmbientOnly(ambOnly); }
+	void setAmbientOnlyFlagVar(ID3D10EffectVariable *v) { laser.setAmbientOnlyFlagVar(v); }
+
 private:
-	GameObject laser; 
+	GameObject laser;
 	float speed;
 	bool active;
 	//Matrix world;

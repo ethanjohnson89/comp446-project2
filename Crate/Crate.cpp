@@ -328,6 +328,8 @@ void CrateApp::initApp()
 	laser.setOverrideColorVar(mfxOverrideColorFlag);
 	laser.setObjectColorVar(mfxObjectColor);
 	laser.setColor(D3DXCOLOR(1, 0, 0, 1));
+	laser.setAmbientOnlyFlagVar(mfxAmbientOnlyFlag);
+	laser.setAmbientOnly(true);
 	laser.setActive();
 	//laser.setPhi(mPhi);
 	//laser.setTheta((int)(mTheta+PI)%6);
@@ -381,6 +383,8 @@ void CrateApp::initApp()
 		sentryLasers[i].setOverrideColorVar(mfxOverrideColorFlag);
 		sentryLasers[i].setObjectColorVar(mfxObjectColor);
 		sentryLasers[i].setColor(D3DXCOLOR(102/255.0f, 1, 0, 1));
+		sentryLasers[i].setAmbientOnlyFlagVar(mfxAmbientOnlyFlag);
+		sentryLasers[i].setAmbientOnly(true);
 
 		sentryLasers[i].setInActive();
 		sentries[i].setInActive();

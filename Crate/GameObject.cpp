@@ -16,6 +16,7 @@ GameObject::GameObject()
 	srand(time(0));
 
 	overrideColor = false;
+	ambientOnly = false;
 
 	tintOffset = D3DXCOLOR(0,0,0,1);
 	tint = false;
@@ -41,6 +42,13 @@ void GameObject::draw()
 		mfxObjectColorVar->SetFloatVector(color);
 	}
 
+	int ambientOnlyFlag = 0;
+	if(ambientOnly)
+	{
+		ambientOnlyFlag = 1;
+		mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
+	}
+
 	if(tint)
 		mfxTintOffsetVar->SetFloatVector(tintOffset);
 
@@ -55,6 +63,12 @@ void GameObject::draw()
 	{
 		overrideColorFlag = 0;
 		mfxOverrideColorVar->SetRawValue(&overrideColorFlag, 0, sizeof(int));
+	}
+	// Ditto for ambientOnlyFlag
+	if(ambientOnlyFlag)
+	{
+		ambientOnlyFlag = 0;
+		mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
 	}
 }
 
