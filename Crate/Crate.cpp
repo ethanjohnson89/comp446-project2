@@ -148,7 +148,7 @@ private:
 
 	State state;
 
-	int timesDied;
+	int timesDied, timesDiedThisLevel;
 
 	float bossDyingTimer;
 	bool bossDead;
@@ -162,6 +162,7 @@ private:
 
 	// BOSS AND SENTRIES
 	Mesh mesh;
+	Mesh scoreOrbs[NUM_LAYERS][NUM_WALLS];
 	Sentry sentries[4];
 	Laser sentryLasers[4];
 
@@ -189,7 +190,7 @@ CrateApp::CrateApp(HINSTANCE hInstance)
 	mVertexLayout(0), mDiffuseMapRV(0), mSpecMapRV(0), mEyePos(0.0f, 0.0f, 0.0f), 
 	mRadius(PLAYER_RADIUS), mTheta(0.0f), mPhi(PI/2), spinAmount(0), bossHealth(3),
 	spacePressedLastFrame(false), level(1), bossDyingTimer(0), bossDead(false), enterPressedLastFrame(false),
-	introMusicTimer(0), playerHealth(100), sentriesRemaining(4), timesDied(0)
+	introMusicTimer(0), playerHealth(100), sentriesRemaining(4), timesDied(0), timesDiedThisLevel(0)
 {
 	D3DXMatrixIdentity(&mCrateWorld);
 	D3DXMatrixIdentity(&mView);
@@ -317,6 +318,9 @@ void CrateApp::initApp()
 	mesh.setOverrideColorVar(mfxOverrideColorFlag);
 	mesh.setObjectColorVar(mfxObjectColor);
 	mesh.setColor(D3DXCOLOR(0, 1, 0, 1));
+
+	//SCORE ORBS
+
 
 
 	//boss.init(&bullet, sqrt(2.0f), D3DXVECTOR3(0,0,0), D3DXVECTOR3(0,0,0), 10,1);
@@ -491,8 +495,11 @@ void CrateApp::reinitialize()
 		bossHealth = 3;
 		laser.setSpeed(LASER_SPEED_LVL1);
 
-		displayTip = true;
-		tip = "Tip: Shoot them while they're not firing";
+		if(timesDiedThisLevel < 4)
+		{
+			displayTip = true;
+			tip = "Tip: Shoot them while they're not firing";
+		}
 		
 
 		//sentry specifics for this level
@@ -562,8 +569,11 @@ void CrateApp::reinitialize()
 		bossHealth = 5;
 		laser.setSpeed(LASER_SPEED_LVL2);
 
-		displayTip = true;
-		tip = "Tip: Destroy sentries in a certain order...";
+		if(timesDiedThisLevel < 4)
+		{
+			displayTip = true;
+			tip = "Tip: Destroy sentries in a certain order...";
+		}
 
 		sentriesRemaining = 4;
 		//sentry specifics for this level
@@ -734,8 +744,10 @@ void CrateApp::updateScene(float dt)
 				bossDyingTimer += dt;
 				if(bossDyingTimer > 2) //CHANGE TO LENGTH OF SOUND
 				{
-					if(level==1 || level==2 || level==3) 
+					if(level==1 || level==2 || level==3) {
 						state = nextLevel;
+						timesDiedThisLevel = 0;
+					}
 					else if(level==4)
 					{
 						//reinitialize();
@@ -787,6 +799,7 @@ void CrateApp::updateScene(float dt)
 			{
 				state = restart;
 				timesDied++;
+				timesDiedThisLevel++;
 				reinitialize();
 				//audio->stopCue(LASER);
 			}
@@ -898,6 +911,7 @@ void CrateApp::updateScene(float dt)
 				//audio->stopCue(ENDMUSIC);
 				state = intro;
 				level = 1;
+				timesDiedThisLevel=0;
 				enterPressedLastFrame = true;
 			}
 			else if(!GetAsyncKeyState(VK_RETURN)) enterPressedLastFrame = false;
