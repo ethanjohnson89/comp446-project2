@@ -34,6 +34,9 @@
 
 #define SENTRY_RADIUS 10
 
+#define MAX_PARTICLES 1000
+#define PARTICLE_LIFETIME 2.0f
+
 enum State {intro, start, game, end, restart, nextLevel};
 //// Audio stuff
 

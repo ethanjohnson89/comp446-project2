@@ -14,9 +14,16 @@ void Laser::init(Box *b, float r, Vector3 pos, Vector3 vel, float sp, float sX, 
 
 	timer = 0;
 
-	srand(time(0));
+	srand((unsigned)time(0));
 
-	
+	// Initialize all particles to inactive, zero speed, placed at the origin (we'll be changing speed and location when they're
+	// activated later)
+	for(int i = 0; i < MAX_PARTICLES; i++)
+	{
+		particles[i].init(b, r, Vector3(0,0,0), Vector3(0,0,0), 0, .1f,.1f,.1f);
+		particles[i].setInActive();
+	}
+	oldestParticleIndex = 0;
 
 	//overrideColor = false;
 
@@ -33,6 +40,7 @@ void Laser::init(Box *b, float r, Vector3 pos, Vector3 vel, float sp, float sX, 
 Laser::Laser()
 {
 	speed = LASER_SPEED_LVL1;
+	particles.resize(MAX_PARTICLES);
 }
 
 Laser::~Laser()
@@ -43,8 +51,16 @@ void Laser::draw(ID3D10EffectMatrixVariable *mfxWVPVar, D3DXMATRIX mViewProj)
 {
 	D3DXMATRIX pieceMatrix = laser.getWorldMatrix() * getWorldMatrix() * mViewProj;
 	mfxWVPVar->SetMatrix((float*)&pieceMatrix);
-	// mTech has already been set for all pieces by Bullet::setMTech()
+	// mTech has already been set for the "laser" GameObject by Laser::setMTech()
 	laser.draw();
+
+	for(int i = 0; i < MAX_PARTICLES; i++)
+	{
+		D3DXMATRIX particleMatrix = particles[i].getWorldMatrix() * mViewProj;
+		mfxWVPVar->SetMatrix((float*)&particleMatrix);
+		// mTech has already been set for all particles by Laser::setMTech()
+		particles[i].draw();
+	}
 }
 
 void Laser::update(float dt)
@@ -60,6 +76,31 @@ void Laser::update(float dt)
 	RotateY(&rotateTheta, theta);
 	Translate(&translateOut, 0, 0, translate);
 	laser.setWorldMatrix(laser.getWorldMatrix() *translateOut * rotatePhi * rotateTheta);
+
+	// Update active particles: increment their timers by dt, and set them to inactive if they've exceeded their lifetime
+	for(int i = 0; i < MAX_PARTICLES; i++)
+	{
+		if(particles[i].getActiveState()) // no need to do anything if the particle isn't actually active
+		{
+			particles[i].timeActive += dt;
+			if(particles[i].timeActive > PARTICLE_LIFETIME)
+			{
+				particles[i].setInActive();
+				particles[i].timeActive = 0;
+			}
+		}
+	}
+
+	// Create new particles to "trail" the laser
+	Vector3 laserStartPos = laser.getPosition();
+	Matrix laserMiddleTrans = translateOut * rotatePhi * rotateTheta;
+	Vector3 laserMiddlePos = laserStartPos;
+	TransformCoord(&laserMiddlePos, &laserMiddlePos, &laserMiddleTrans);
+	particles[oldestParticleIndex].setPosition(laserMiddlePos); // start the particle at the middle of the laser beam
+	particles[oldestParticleIndex].setVelocity(getRandomParticleVelocity());
+	particles[oldestParticleIndex].setActive();
+	particles[oldestParticleIndex].timeActive = 0.0f;
+	oldestParticleIndex = (oldestParticleIndex + 1) % MAX_PARTICLES;
 
 	//pulsing:
 	if(active && pulsing)

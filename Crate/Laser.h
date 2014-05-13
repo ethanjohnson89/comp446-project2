@@ -3,6 +3,8 @@
 
 #include "d3dUtil.h"
 #include "GameObject.h"
+#include "Particle.h"
+#include <vector>
 
 class Laser : public GameObject
 {
@@ -59,15 +61,46 @@ public:
 	void setThetaSpeed(float p) {thetaSpeed=p;}
 	float getThetaSpeed() {return thetaSpeed;}
 	
-	void setMTech(ID3D10EffectTechnique* m){mTech = m; laser.setMTech(m);}
+	void setMTech(ID3D10EffectTechnique* m)
+	{
+		mTech = m;
+		laser.setMTech(m);
+		for(int i = 0; i < MAX_PARTICLES; i++)
+			particles[i].setMTech(m);
+	}
 	
-	void setColor(D3DXCOLOR c) {laser.setColor(c);}
+	void setColor(D3DXCOLOR c)
+	{
+		laser.setColor(c);
+		for(int i = 0; i < MAX_PARTICLES; i++)
+			particles[i].setColor(c);
+	}
     D3DXCOLOR getColor() { return laser.getColor(); }
-    void setOverrideColorVar(ID3D10EffectVariable *v) {laser.setOverrideColorVar(v);} 
-    void setObjectColorVar(ID3D10EffectVectorVariable *v) {laser.setObjectColorVar(v);}
+    void setOverrideColorVar(ID3D10EffectVariable *v)
+	{
+		laser.setOverrideColorVar(v);
+		for(int i = 0; i < MAX_PARTICLES; i++)
+			particles[i].setOverrideColorVar(v);
+	} 
+    void setObjectColorVar(ID3D10EffectVectorVariable *v)
+	{
+		laser.setObjectColorVar(v);
+		for(int i = 0; i < MAX_PARTICLES; i++)
+			particles[i].setObjectColorVar(v);
+	}
 
-	void setAmbientOnly(bool ambOnly) { laser.setAmbientOnly(ambOnly); }
-	void setAmbientOnlyFlagVar(ID3D10EffectVariable *v) { laser.setAmbientOnlyFlagVar(v); }
+	void setAmbientOnly(bool ambOnly)
+	{
+		laser.setAmbientOnly(ambOnly);
+		for(int i = 0; i < MAX_PARTICLES; i++)
+			particles[i].setAmbientOnly(ambOnly);
+	}
+	void setAmbientOnlyFlagVar(ID3D10EffectVariable *v)
+	{
+		laser.setAmbientOnlyFlagVar(v);
+		for(int i = 0; i < MAX_PARTICLES; i++)
+			particles[i].setAmbientOnlyFlagVar(v);
+	}
 
 private:
 	GameObject laser;
@@ -84,6 +117,18 @@ private:
 	float pulseOnTime, pulseOffTime, timer;
 	float startingPhi, phiSpeed, thetaSpeed;
 	float translate;
+
+	std::vector<Particle> particles; // initialized to size MAX_PARTICLES in constructor
+	int oldestParticleIndex;
+
+	Vector3 getRandomParticleVelocity()
+	{
+		float x = (rand() % 10) / 100.0f;
+		float y = (rand() % 10) / 100.0f;
+		float z = (rand() % 10) / 100.0f;
+
+		return Vector3(x,y,z);
+	}
 
 	/*bool overrideColor;
     D3DXCOLOR color;
