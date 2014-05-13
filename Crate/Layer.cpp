@@ -150,6 +150,114 @@ void Layer::init(ID3D10Device* device, float scale)
     HR(md3dDevice->CreateBuffer(&ibd, &iinitData, &mIB));
 }
 
+void Layer::reinit(rotationAxis a, int r)
+{
+	radius = r; 
+	axis = a;
+	for(int i=0; i<NUM_WALLS; i++)
+	{
+		regenTime[i] = 0;
+		wallHealth[i] = 2;
+	}
+
+	if(axis==Y)
+	{
+		for(int i=0; i<NUM_WALLS; i++)
+		{
+			startingTheta[i] = i*2*PI/NUM_WALLS - (PI/2); // THAT PI/2 MAKES UP FOR DIFFERENCE IN STARTING THETAS FOR WALLS AND CAMERA
+			startingPhi[i] = PI/2;
+		}
+	}
+	if(axis==Z)
+	{
+		for(int i=0; i<NUM_WALLS; i++)
+		{
+			//startingTheta[i] = i*2*PI/NUM_WALLS; 
+			startingPhi[i] = i*2*PI/NUM_WALLS;
+		}
+	}
+	if(axis==X || axis==YZ || axis==ZY)
+	{
+		for(int i=0; i<NUM_WALLS; i++)
+		{
+			//startingTheta[i] = i*2*PI/NUM_WALLS + PI; 
+			//startingPhi[i] = i*2*PI/NUM_WALLS + PI/2; 
+			float t = i*2*PI/NUM_WALLS + PI/2;
+			int temp = static_cast<int>(t/(2*PI));
+			startingPhi[i] = t - static_cast<float>(temp)*(2*PI);
+			//phis[i] = startingPhi[i];
+		}
+	}
+
+	//// ALL THIS IS TOTAL HACK (I have no idea how much of it's even needed, it was last minute)
+	static float bthetas[NUM_WALLS];
+	static float bphis[NUM_WALLS];
+	static float bstartingTheta[NUM_WALLS];
+	static float bstartingPhi[NUM_WALLS];
+	static float bregenTime[NUM_WALLS];
+	static int bwallHealth[NUM_WALLS];
+
+	static Vector3 bWallPos[NUM_WALLS];
+	static Vector3 bWallVel[NUM_WALLS];
+
+	static float bWallRotX[NUM_WALLS];
+	static float bWallRotY[NUM_WALLS];
+	static float bWallRotZ[NUM_WALLS];
+
+	static Vector3 bSpins[NUM_WALLS];
+	static Vector3 bSpinSpeeds[NUM_WALLS];
+
+	static bool firstTime = true;
+	if(firstTime)
+	{
+		firstTime = false;
+
+		for(int i = 0; i < NUM_WALLS; i++)
+		{
+			bthetas[i] = thetas[i];
+			bphis[i] = phis[i];
+			bstartingTheta[i] = startingTheta[i];
+			bstartingPhi[i] = startingPhi[i];
+			bregenTime[i] = regenTime[i];
+			bwallHealth[i] = wallHealth[i];
+
+			bWallPos[i] = walls[i].getPosition();
+			bWallVel[i] = walls[i].getVelocity();
+			bWallRotX[i] = walls[i].getRotX();
+			bWallRotY[i] = walls[i].getRotY();
+			bWallRotZ[i] = walls[i].getRotZ();
+
+			bSpins[i] = Vector3(walls[i].spinAmountX, walls[i].spinAmountY, walls[i].spinAmountZ);
+			bSpinSpeeds[i] = Vector3(walls[i].spinXSpeed, walls[i].spinYSpeed, walls[i].spinZSpeed);
+		}
+	}
+	else
+	{
+		for(int i = 0; i < NUM_WALLS; i++)
+		{
+			thetas[i] = bthetas[i];
+			phis[i] = bphis[i];
+			startingTheta[i] = bstartingTheta[i];
+			startingPhi[i] = bstartingPhi[i];
+			regenTime[i] = bregenTime[i];
+			wallHealth[i] = bwallHealth[i];
+
+			walls[i].setPosition(bWallPos[i]);
+			walls[i].setVelocity(bWallVel[i]);
+			walls[i].setRotX(bWallRotX[i]);
+			walls[i].setRotY(bWallRotY[i]);
+			walls[i].setRotZ(bWallRotZ[i]);
+
+			walls[i].spinAmountX = bSpins[i].x;
+			walls[i].spinAmountY = bSpins[i].y;
+			walls[i].spinAmountZ = bSpins[i].z;
+			walls[i].spinXSpeed = bSpinSpeeds[i].x;
+			walls[i].spinYSpeed = bSpinSpeeds[i].y;
+			walls[i].spinZSpeed = bSpinSpeeds[i].z;
+		}
+	}
+}
+
 void Layer::draw()
 {
 	UINT stride = sizeof(Vertex);

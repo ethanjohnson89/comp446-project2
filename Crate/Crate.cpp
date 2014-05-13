@@ -43,7 +43,7 @@ public:
 	void drawScene(); 
 
 	void regenerateWalls(float dt);
-	void reinitialize();
+	void reinitialize(float dt);
 	void bulletWallCollision();
 	void laserWallCollision();
 	void bulletSentryCollision();
@@ -415,7 +415,7 @@ void CrateApp::initApp()
 
 	level = 1;
 
-	reinitialize();
+	reinitialize(0);
 }
 
 void CrateApp::onResize()
@@ -426,7 +426,7 @@ void CrateApp::onResize()
 	D3DXMatrixPerspectiveFovLH(&mProj, 0.25f*PI, aspect, 1.0f, 1000.0f);
 }
 
-void CrateApp::reinitialize()
+void CrateApp::reinitialize(float dt)
 {
 	spacePressedLastFrame = false;
 	//enterPressedLastFrame = false;
@@ -442,7 +442,26 @@ void CrateApp::reinitialize()
 	playerHealth = 100;
 
 	resetTip();
-	 
+
+	// Reset layer walls after they've been 'blown apart' by the last level
+	for(int i = 0; i < NUM_LAYERS; i++)
+		for(int j = 0; j < NUM_WALLS; j++)
+		{
+			layers[i].walls[j].setVelocity(Vector3(0,0,0));
+			layers[i].walls[j].setRotXSpeed(0);
+			layers[i].walls[j].setRotYSpeed(0);
+		}
+	layers[0].reinit(rotationAxis::Y, 5);
+	layers[1].reinit(rotationAxis::Z, 5);
+	layers[2].reinit(rotationAxis::X, 5);
+	layers[3].reinit(rotationAxis::YZ, 5);
+	layers[4].reinit(rotationAxis::ZY, 5);
+	
+	static bool _firstTime = true;
+	if(_firstTime)
+		_firstTime = false;
+	else
+		regenerateWalls(dt);
 	
 	for(int j=0; j<NUM_LAYERS; j++)
 	{
@@ -665,7 +684,7 @@ void CrateApp::updateScene(float dt)
 				state = game;
 				enterPressedLastFrame = true;
 				audio->stopCue(INTROMUSIC);
-				audio->playCue(LASER);
+				//audio->playCue(LASER);
 			}
 			else if(!GetAsyncKeyState(VK_RETURN)) enterPressedLastFrame = false;
 
@@ -745,6 +764,27 @@ void CrateApp::updateScene(float dt)
 					//PLAY SOUND
 					audio->stopCue(LASER);
 					audio->playCue(BOSSDYING);
+
+					// Have walls drift away
+					static bool firstTime = true;
+					if(firstTime)
+					{
+						srand((unsigned)(time(0)));
+						firstTime = false;
+					}
+					for(int i = 0; i < 5; i++)
+					{
+						for(int j = 0; j < NUM_WALLS; j++)
+						{
+							float x = rand() % 4;
+							float y = rand() % 4;
+							float z = rand() % 4;
+							layers[i].walls[j].setVelocity(Vector3(x,y,z));
+
+							layers[i].walls[j].setRotXSpeed(rand() % 3);
+							layers[i].walls[j].setRotYSpeed(rand() % 3);
+						}
+					}
 				}
 			}
 
@@ -818,7 +858,7 @@ void CrateApp::updateScene(float dt)
 				state = restart;
 				timesDied++;
 				timesDiedThisLevel++;
-				reinitialize();
+				reinitialize(dt);
 				audio->stopCue(LASER);
 			}
 
@@ -903,7 +943,7 @@ void CrateApp::updateScene(float dt)
 			{
 				audio->playCue(LASER);
 				state = game;
-				reinitialize();
+				reinitialize(dt);
 			}
 
 			break;
@@ -917,7 +957,7 @@ void CrateApp::updateScene(float dt)
 				else if(level==2) level=3;
 				else if(level==3) level=4;
 				state = game;
-				reinitialize();
+				reinitialize(dt);
 			}
 			break;
 		}
