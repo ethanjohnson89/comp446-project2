@@ -20,7 +20,7 @@ void Laser::init(Box *b, float r, Vector3 pos, Vector3 vel, float sp, float sX, 
 	// activated later)
 	for(int i = 0; i < MAX_PARTICLES; i++)
 	{
-		particles[i].init(b, r, Vector3(0,0,0), Vector3(0,0,0), 0, .1f,.1f,.1f);
+		particles[i].init(b, r, Vector3(0,0,0), Vector3(0,0,0), 0, 1.0f,1.0f,1.0f);
 		particles[i].setInActive();
 	}
 	oldestParticleIndex = 0;
@@ -77,7 +77,11 @@ void Laser::update(float dt)
 	Translate(&translateOut, 0, 0, translate);
 	laser.setWorldMatrix(laser.getWorldMatrix() *translateOut * rotatePhi * rotateTheta);
 
-	// Update active particles: increment their timers by dt, and set them to inactive if they've exceeded their lifetime
+	////// PARTICLES
+	for(int i = 0; i < MAX_PARTICLES; i++)
+		particles[i].update(dt);
+
+	// Increment active particles' timers by dt, and set them to inactive if they've exceeded their lifetime
 	for(int i = 0; i < MAX_PARTICLES; i++)
 	{
 		if(particles[i].getActiveState()) // no need to do anything if the particle isn't actually active
@@ -96,7 +100,7 @@ void Laser::update(float dt)
 	Matrix laserMiddleTrans = translateOut * rotatePhi * rotateTheta;
 	Vector3 laserMiddlePos = laserStartPos;
 	TransformCoord(&laserMiddlePos, &laserMiddlePos, &laserMiddleTrans);
-	particles[oldestParticleIndex].setPosition(laserMiddlePos); // start the particle at the middle of the laser beam
+	particles[oldestParticleIndex].setPosition(laserStartPos); // start the particle at the middle of the laser beam
 	particles[oldestParticleIndex].setVelocity(getRandomParticleVelocity());
 	particles[oldestParticleIndex].setActive();
 	particles[oldestParticleIndex].timeActive = 0.0f;
