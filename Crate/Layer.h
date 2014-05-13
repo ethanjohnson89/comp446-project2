@@ -25,7 +25,6 @@ struct Layer {
 	Layer::Layer() {}
 
 	void init(ID3D10Device* device, float scale);
-	void reinit(rotationAxis a, int r);
 	void draw();
 
 	void updateMatrices(float spinAmount);
