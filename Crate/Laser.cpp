@@ -20,7 +20,7 @@ void Laser::init(Box *b, float r, Vector3 pos, Vector3 vel, float sp, float sX, 
 	// activated later)
 	for(int i = 0; i < MAX_PARTICLES; i++)
 	{
-		particles[i].init(b, r, Vector3(0,0,0), Vector3(0,0,0), 0, 1.0f,1.0f,1.0f);
+		particles[i].init(b, r, Vector3(0,0,0), Vector3(0,0,0), 0, .05f,.05f,.05f);
 		particles[i].setInActive();
 	}
 	oldestParticleIndex = 0;
@@ -78,8 +78,6 @@ void Laser::update(float dt)
 	laser.setWorldMatrix(laser.getWorldMatrix() *translateOut * rotatePhi * rotateTheta);
 
 	////// PARTICLES
-	for(int i = 0; i < MAX_PARTICLES; i++)
-		particles[i].update(dt);
 
 	// Increment active particles' timers by dt, and set them to inactive if they've exceeded their lifetime
 	for(int i = 0; i < MAX_PARTICLES; i++)
@@ -96,15 +94,24 @@ void Laser::update(float dt)
 	}
 
 	// Create new particles to "trail" the laser
-	Vector3 laserStartPos = laser.getPosition();
-	Matrix laserMiddleTrans = translateOut * rotatePhi * rotateTheta;
-	Vector3 laserMiddlePos = laserStartPos;
-	TransformCoord(&laserMiddlePos, &laserMiddlePos, &laserMiddleTrans);
-	particles[oldestParticleIndex].setPosition(laserStartPos); // start the particle at the middle of the laser beam
-	particles[oldestParticleIndex].setVelocity(getRandomParticleVelocity());
-	particles[oldestParticleIndex].setActive();
-	particles[oldestParticleIndex].timeActive = 0.0f;
-	oldestParticleIndex = (oldestParticleIndex + 1) % MAX_PARTICLES;
+	if(laser.getActiveState())
+	{
+		Vector3 laserStartPos = laser.getPosition();
+		Matrix laserMiddleTrans = rotatePhi * rotateTheta;
+		Vector3 laserMiddlePos = laserStartPos + Vector3(0,0,-PLAYER_RADIUS*.5);
+		TransformCoord(&laserMiddlePos, &laserMiddlePos, &laserMiddleTrans);
+		particles[oldestParticleIndex].setPosition(laserMiddlePos); // start the particle at the middle of the laser beam
+		particles[oldestParticleIndex].setVelocity(getRandomParticleVelocity());
+		particles[oldestParticleIndex].setActive();
+		particles[oldestParticleIndex].timeActive = 0.0f;
+		oldestParticleIndex = (oldestParticleIndex + 1) % MAX_PARTICLES;
+	}
+
+	// Update the particle objects themselves
+	// (NOTE: move this before the "create new particles" section to get a potentially interesting "flicker" effect at the particles'
+	// old positions as they're re-used.)
+	for(int i = 0; i < MAX_PARTICLES; i++)
+		particles[i].update(dt);
 
 	//pulsing:
 	if(active && pulsing)

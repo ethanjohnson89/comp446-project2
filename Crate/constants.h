@@ -34,7 +34,7 @@
 
 #define SENTRY_RADIUS 10
 
-#define MAX_PARTICLES 100
+#define MAX_PARTICLES 500
 #define PARTICLE_LIFETIME 2.0f
 
 enum State {intro, start, game, end, restart, nextLevel};

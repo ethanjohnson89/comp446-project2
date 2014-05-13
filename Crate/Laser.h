@@ -123,9 +123,9 @@ private:
 
 	Vector3 getRandomParticleVelocity()
 	{
-		float x = getRandomSign() * (rand() % 10) / 1.0f;
-		float y = getRandomSign() * (rand() % 10) / 1.0f;
-		float z = getRandomSign() * (rand() % 10) / 1.0f;
+		float x = getRandomSign() * (rand() % 10) / 20.0f;
+		float y = getRandomSign() * (rand() % 10) / 20.0f;
+		float z = getRandomSign() * (rand() % 10) / 20.0f;
 
 		return Vector3(x,y,z);
 	}
