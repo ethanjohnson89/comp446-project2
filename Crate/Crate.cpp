@@ -117,6 +117,7 @@ private:
 	ID3D10EffectVectorVariable *mfxTintOffset;
 
 	D3DXMATRIX mCrateWorld;
+	D3DXMATRIX mSplashscreenWorld; // a hack, but it works :-)
 
 	D3DXMATRIX mView;
 	D3DXMATRIX mProj;
@@ -1253,7 +1254,14 @@ void CrateApp::drawScene()
 			int ambientOnlyFlag = 1;
 			mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
 
-			mWVP = mCrateWorld*mView*mProj;
+			static bool firstTime = true;
+			if(firstTime)
+			{
+				mSplashscreenWorld = mCrateWorld * mView * mProj;
+				firstTime = false;
+			}
+
+			mWVP = mSplashscreenWorld;
 			mfxWVPVar->SetMatrix((float*)&mWVP);
 			mfxDiffuseMapVar->SetResource(introIntroSplashscreen.getDiffuseMapRV());
 			mfxSpecMapVar->SetResource(introIntroSplashscreen.getSpecMapRV());
@@ -1272,7 +1280,7 @@ void CrateApp::drawScene()
 			mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
 
 			//Splashscreen
-			mWVP = mCrateWorld*mView*mProj;
+			mWVP = mSplashscreenWorld;
 			mfxWVPVar->SetMatrix((float*)&mWVP);
 			mfxDiffuseMapVar->SetResource(introSplashscreen.getDiffuseMapRV());
 			mfxSpecMapVar->SetResource(introSplashscreen.getSpecMapRV());
@@ -1394,7 +1402,7 @@ void CrateApp::drawScene()
 			int ambientOnlyFlag = 1;
 			mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
 
-			mWVP = mCrateWorld*mView*mProj;
+			mWVP = mSplashscreenWorld;
 			mfxWVPVar->SetMatrix((float*)&mWVP);
 			mfxDiffuseMapVar->SetResource(restartSplashscreen.getDiffuseMapRV());
 			mfxSpecMapVar->SetResource(restartSplashscreen.getSpecMapRV());
@@ -1412,7 +1420,7 @@ void CrateApp::drawScene()
 			int ambientOnlyFlag = 1;
 			mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
 
-			mWVP = mCrateWorld*mView*mProj;
+			mWVP = mSplashscreenWorld;
 			mfxWVPVar->SetMatrix((float*)&mWVP);
 			mfxDiffuseMapVar->SetResource(nextLevelSplashscreen.getDiffuseMapRV());
 			mfxSpecMapVar->SetResource(nextLevelSplashscreen.getSpecMapRV());
@@ -1430,7 +1438,7 @@ void CrateApp::drawScene()
 			int ambientOnlyFlag = 1;
 			mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
 
-			mWVP = mCrateWorld*mView*mProj;
+			mWVP = mSplashscreenWorld;
 			mfxWVPVar->SetMatrix((float*)&mWVP);
 			mfxDiffuseMapVar->SetResource(endSplashscreen.getDiffuseMapRV());
 			mfxSpecMapVar->SetResource(endSplashscreen.getSpecMapRV());
