@@ -5,6 +5,7 @@
 #include "GameObject.h"
 #include "Particle.h"
 #include <vector>
+#include <random>
 
 class Laser : public GameObject
 {
@@ -136,6 +137,13 @@ private:
 		else
 			return -1;
 	}
+	float getRandomLifetime() // returns a random float in the range [0, MAX_PARTICLE_LIFETIME]
+	{
+		static std::uniform_real_distribution<float> dist(0, MAX_PARTICLE_LIFETIME);
+		return dist(randEngine);
+	}
+
+	std::default_random_engine randEngine;
 
 	/*bool overrideColor;
     D3DXCOLOR color;

@@ -20,7 +20,7 @@ void Laser::init(Box *b, float r, Vector3 pos, Vector3 vel, float sp, float sX, 
 	// activated later)
 	for(int i = 0; i < MAX_PARTICLES; i++)
 	{
-		particles[i].init(b, r, Vector3(0,0,0), Vector3(0,0,0), 0, .05f,.05f,.05f);
+		particles[i].init(b, r, Vector3(0,0,0), Vector3(0,0,0), 0, .01f,.01f,.01f);
 		particles[i].setInActive();
 	}
 	oldestParticleIndex = 0;
@@ -85,7 +85,7 @@ void Laser::update(float dt)
 		if(particles[i].getActiveState()) // no need to do anything if the particle isn't actually active
 		{
 			particles[i].timeActive += dt;
-			if(particles[i].timeActive > PARTICLE_LIFETIME)
+			if(particles[i].timeActive > particles[i].lifetime)
 			{
 				particles[i].setInActive();
 				particles[i].timeActive = 0;
@@ -98,13 +98,24 @@ void Laser::update(float dt)
 	{
 		Vector3 laserStartPos = laser.getPosition();
 		Matrix laserMiddleTrans = rotatePhi * rotateTheta;
-		Vector3 laserMiddlePos = laserStartPos + Vector3(0,0,-PLAYER_RADIUS*.5);
-		TransformCoord(&laserMiddlePos, &laserMiddlePos, &laserMiddleTrans);
-		particles[oldestParticleIndex].setPosition(laserMiddlePos); // start the particle at the middle of the laser beam
-		particles[oldestParticleIndex].setVelocity(getRandomParticleVelocity());
-		particles[oldestParticleIndex].setActive();
-		particles[oldestParticleIndex].timeActive = 0.0f;
-		oldestParticleIndex = (oldestParticleIndex + 1) % MAX_PARTICLES;
+		for(float d = 0; d < PLAYER_RADIUS*2; d += 0.5f) // generate particles at points along the laser beam
+		{
+			if(rand() % 2 == 0) // to make it look a bit more "natural"
+			{
+				Vector3 laserMiddlePos = laserStartPos + Vector3(0,0,-d);
+				TransformCoord(&laserMiddlePos, &laserMiddlePos, &laserMiddleTrans);
+				particles[oldestParticleIndex].setPosition(laserMiddlePos); // start the particle at the middle of the laser beam
+				particles[oldestParticleIndex].setVelocity(getRandomParticleVelocity());
+				particles[oldestParticleIndex].setActive();
+				particles[oldestParticleIndex].timeActive = 0.0f;
+				particles[oldestParticleIndex].lifetime = getRandomLifetime();
+				oldestParticleIndex = (oldestParticleIndex + 1) % MAX_PARTICLES;
+
+				// DEBUG - breakpoint to check if particles are being recycled while still active (i.e. MAX_PARTICLES is too low)
+				if(particles[oldestParticleIndex].getActiveState())
+					oldestParticleIndex = (oldestParticleIndex - 1) + 1;
+			}
+		}
 	}
 
 	// Update the particle objects themselves
