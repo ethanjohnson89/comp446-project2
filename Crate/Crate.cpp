@@ -477,7 +477,7 @@ void CrateApp::reinitialize()
 		sentryLasers[0].setTheta(7*PI/4);
 		sentryLasers[0].setPhiSpeed(0);
 		sentryLasers[1].setPhiSpeed(40);
-		sentryLasers[0].setThetaSpeed(.0015);
+		sentryLasers[0].setThetaSpeed(.01);
 
 		sentryLasers[0].setPulseOnTime(.5);
 		sentryLasers[0].setPulseOffTime(1.8);
@@ -524,7 +524,7 @@ void CrateApp::reinitialize()
 		sentryLasers[0].setTheta(7*PI/4);
 		sentryLasers[0].setPhiSpeed(0);
 		sentryLasers[1].setPhiSpeed(44);
-		sentryLasers[0].setThetaSpeed(.0018);
+		sentryLasers[0].setThetaSpeed(.012);
 
 		sentryLasers[0].setPulseOnTime(1.1);
 		sentryLasers[0].setPulseOffTime(1.3);
@@ -552,7 +552,7 @@ void CrateApp::reinitialize()
 		sentryLasers[0].setTheta(7*PI/4);
 		sentryLasers[0].setPhiSpeed(0);
 		sentryLasers[1].setPhiSpeed(48);
-		sentryLasers[0].setThetaSpeed(.002);
+		sentryLasers[0].setThetaSpeed(.015);
 
 		sentryLasers[2].setStartingPhi(3*PI/2);
 		sentryLasers[3].setStartingPhi(PI/4);
@@ -597,7 +597,7 @@ void CrateApp::reinitialize()
 		sentryLasers[0].setTheta(7*PI/4);
 		sentryLasers[0].setPhiSpeed(0);
 		sentryLasers[1].setPhiSpeed(50);
-		sentryLasers[0].setThetaSpeed(.0025);
+		sentryLasers[0].setThetaSpeed(.02);
 
 		sentryLasers[2].setStartingPhi(3*PI/2);
 		sentryLasers[3].setStartingPhi(PI/4);
@@ -1033,7 +1033,7 @@ void CrateApp::bulletSentryCollision()
 					//if bullet Phi is close to either 0 or PI, ignore theta comparisons
 					if(bulletObject.getPhi() < .3 || bulletObject.getPhi() > 2.7)
 					{
-						if((abs(bulletObject.getPhi() - sentryLasers[i].getPhi()) < .09) && (abs(bulletObject.getDistanceToOrigin() - SENTRY_RADIUS) < .05))
+						if((abs(bulletObject.getPhi() - sentryLasers[i].getPhi()) < .30) && (abs(bulletObject.getDistanceToOrigin() - SENTRY_RADIUS) < .085))
 						{
 							//decrease sentry health
 							bulletObject.setInActive();
@@ -1054,7 +1054,7 @@ void CrateApp::bulletSentryCollision()
 					}
 					else {
 						//if((abs(bulletObject.getTheta() - layers[j].thetas[i]) < .43) && (abs(bulletObject.getPhi() - layers[j].phis[i]) < .3) && (abs(bulletObject.getDistanceToOrigin() - layers[j].radius) < .5))
-						if(((abs(bulletObject.getTheta() - sentryLasers[i].getTheta()) < .09) || (abs(bulletObject.getTheta() - 2*PI - sentryLasers[i].getTheta()) < .09)) && (abs(bulletObject.getPhi() - sentryLasers[i].getPhi()) < .09) && (abs(bulletObject.getDistanceToOrigin() - SENTRY_RADIUS) < .05))
+						if(((abs(bulletObject.getTheta() - sentryLasers[i].getTheta()) < .30) || (abs(bulletObject.getTheta() - 2*PI - sentryLasers[i].getTheta()) < .30)) && (abs(bulletObject.getPhi() - sentryLasers[i].getPhi()) < .30) && (abs(bulletObject.getDistanceToOrigin() - SENTRY_RADIUS) < .085))
 						{
 							//decrease sentry health
 							bulletObject.setInActive();
