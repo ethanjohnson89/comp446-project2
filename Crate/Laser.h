@@ -123,11 +123,18 @@ private:
 
 	Vector3 getRandomParticleVelocity()
 	{
-		float x = (rand() % 10) / 1.0f;
-		float y = (rand() % 10) / 1.0f;
-		float z = (rand() % 10) / 1.0f;
+		float x = getRandomSign() * (rand() % 10) / 1.0f;
+		float y = getRandomSign() * (rand() % 10) / 1.0f;
+		float z = getRandomSign() * (rand() % 10) / 1.0f;
 
 		return Vector3(x,y,z);
+	}
+	int getRandomSign() // to randomly choose whether a number is positive or negative
+	{
+		if(rand() % 2)
+			return 1;
+		else
+			return -1;
 	}
 
 	/*bool overrideColor;
