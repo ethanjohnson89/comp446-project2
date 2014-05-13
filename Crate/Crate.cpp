@@ -704,7 +704,7 @@ void CrateApp::updateScene(float dt)
 				state = game;
 				enterPressedLastFrame = true;
 				audio->stopCue(INTROMUSIC);
-				audio->playCue(LASER);
+				//audio->playCue(LASER);
 			}
 			else if(!GetAsyncKeyState(VK_RETURN)) enterPressedLastFrame = false;
 
