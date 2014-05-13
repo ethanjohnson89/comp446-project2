@@ -34,7 +34,7 @@
 
 #define SENTRY_RADIUS 10
 
-enum State {intro, start, game, end, restart, nextLevel};
+enum State {intro, start, game, end, restart, nextLevel, instructions};
 //// Audio stuff
 
 // audio files

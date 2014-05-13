@@ -81,11 +81,13 @@ private:
 	Splashscreen nextLevel2Splashscreen;
 	Splashscreen nextLevel3Splashscreen;
 	Splashscreen endSplashscreen;
+	Splashscreen instructionsSplashscreen;
 
 	//ID3D10ShaderResourceView* mDiffuseMapRV_IntroScreen;
 
 	ID3D10ShaderResourceView* mBackgroundRV;
 	ID3D10ShaderResourceView* mIntroIntroRV;
+	ID3D10ShaderResourceView* mInstructionsRV;
 	ID3D10ShaderResourceView* mIntroRV;
 	ID3D10ShaderResourceView* mRestartRV;
 	ID3D10ShaderResourceView* mNextLevelRV;
@@ -279,6 +281,9 @@ void CrateApp::initApp()
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"INTRO.png", 0, 0, &mIntroRV, 0 ));
 
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"instructions.png", 0, 0, &mInstructionsRV, 0 ));
+
 	introSplashscreen.init(md3dDevice, 7.75f, mIntroRV, mSpecMapRV, mTech);
 
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
@@ -298,6 +303,8 @@ void CrateApp::initApp()
 	nextLevelSplashscreen.init(md3dDevice, 7.75f, mNextLevelRV, mSpecMapRV, mTech);
 	nextLevel2Splashscreen.init(md3dDevice, 7.75f, mNextLevel2RV, mSpecMapRV, mTech);
 	nextLevel3Splashscreen.init(md3dDevice, 7.75f, mNextLevel3RV, mSpecMapRV, mTech);
+
+	instructionsSplashscreen.init(md3dDevice, 7.75f, mInstructionsRV, mSpecMapRV, mTech);
 
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"endscreen.png", 0, 0, &mEndRV, 0 ));
@@ -690,6 +697,26 @@ void CrateApp::updateScene(float dt)
 			break;
 		}
 	case start:
+		{
+			if(!enterPressedLastFrame && GetAsyncKeyState(VK_RETURN) & 0x8000) 
+			{
+				state = instructions;
+				enterPressedLastFrame = true;
+				//audio->stopCue(INTROMUSIC);
+				//audio->playCue(LASER);
+			}
+			else if(!GetAsyncKeyState(VK_RETURN)) enterPressedLastFrame = false;
+
+			/*introMusicTimer += dt;
+			if(introMusicTimer > 12.5)
+			{
+				audio->playCue(LASER);
+				state = game;
+			}*/
+
+			break;
+		}
+	case instructions:
 		{
 			if(!enterPressedLastFrame && GetAsyncKeyState(VK_RETURN) & 0x8000) 
 			{
@@ -1344,6 +1371,25 @@ void CrateApp::drawScene()
 
 			break;
 		}
+	case instructions:
+		{
+			// Set lighting to ambient only for the splashscreen
+			int ambientOnlyFlag = 1;
+			mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
+
+			//Splashscreen
+			mWVP = mSplashscreenWorld;
+			mfxWVPVar->SetMatrix((float*)&mWVP);
+			mfxDiffuseMapVar->SetResource(instructionsSplashscreen.getDiffuseMapRV());
+			mfxSpecMapVar->SetResource(instructionsSplashscreen.getSpecMapRV());
+			instructionsSplashscreen.draw();
+
+			// Turn regular lighting back on for the rest of the scene
+			ambientOnlyFlag = 0;
+			mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
+
+			break;
+		}
 	case game:
 		{
 			//BOSS
@@ -1488,7 +1534,7 @@ void CrateApp::drawScene()
 				mfxSpecMapVar->SetResource(nextLevel2Splashscreen.getSpecMapRV());
 				nextLevel2Splashscreen.draw();
 			}
-			else if(level==2)
+			else if(level==3)
 			{
 				mWVP = mSplashscreenWorld;
 				mfxWVPVar->SetMatrix((float*)&mWVP);
