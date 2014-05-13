@@ -78,6 +78,8 @@ private:
 	Splashscreen introSplashscreen;
 	Splashscreen restartSplashscreen;
 	Splashscreen nextLevelSplashscreen;
+	Splashscreen nextLevel2Splashscreen;
+	Splashscreen nextLevel3Splashscreen;
 	Splashscreen endSplashscreen;
 
 	//ID3D10ShaderResourceView* mDiffuseMapRV_IntroScreen;
@@ -87,6 +89,8 @@ private:
 	ID3D10ShaderResourceView* mIntroRV;
 	ID3D10ShaderResourceView* mRestartRV;
 	ID3D10ShaderResourceView* mNextLevelRV;
+	ID3D10ShaderResourceView* mNextLevel2RV;
+	ID3D10ShaderResourceView* mNextLevel3RV;
 	ID3D10ShaderResourceView* mEndRV;
 
 	Bullet bulletObject;
@@ -285,7 +289,15 @@ void CrateApp::initApp()
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"transition.png", 0, 0, &mNextLevelRV, 0 ));
 
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"transition 2.png", 0, 0, &mNextLevel2RV, 0 ));
+
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"transition 3.png", 0, 0, &mNextLevel3RV, 0 ));
+
 	nextLevelSplashscreen.init(md3dDevice, 7.75f, mNextLevelRV, mSpecMapRV, mTech);
+	nextLevel2Splashscreen.init(md3dDevice, 7.75f, mNextLevel2RV, mSpecMapRV, mTech);
+	nextLevel3Splashscreen.init(md3dDevice, 7.75f, mNextLevel3RV, mSpecMapRV, mTech);
 
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"endscreen.png", 0, 0, &mEndRV, 0 ));
@@ -1460,11 +1472,30 @@ void CrateApp::drawScene()
 			int ambientOnlyFlag = 1;
 			mfxAmbientOnlyFlag->SetRawValue(&ambientOnlyFlag, 0, sizeof(int));
 
-			mWVP = mSplashscreenWorld;
-			mfxWVPVar->SetMatrix((float*)&mWVP);
-			mfxDiffuseMapVar->SetResource(nextLevelSplashscreen.getDiffuseMapRV());
-			mfxSpecMapVar->SetResource(nextLevelSplashscreen.getSpecMapRV());
-			nextLevelSplashscreen.draw();
+			if(level==1)
+			{
+				mWVP = mSplashscreenWorld;
+				mfxWVPVar->SetMatrix((float*)&mWVP);
+				mfxDiffuseMapVar->SetResource(nextLevelSplashscreen.getDiffuseMapRV());
+				mfxSpecMapVar->SetResource(nextLevelSplashscreen.getSpecMapRV());
+				nextLevelSplashscreen.draw();
+			}
+			else if(level==2)
+			{
+				mWVP = mSplashscreenWorld;
+				mfxWVPVar->SetMatrix((float*)&mWVP);
+				mfxDiffuseMapVar->SetResource(nextLevel2Splashscreen.getDiffuseMapRV());
+				mfxSpecMapVar->SetResource(nextLevel2Splashscreen.getSpecMapRV());
+				nextLevel2Splashscreen.draw();
+			}
+			else if(level==2)
+			{
+				mWVP = mSplashscreenWorld;
+				mfxWVPVar->SetMatrix((float*)&mWVP);
+				mfxDiffuseMapVar->SetResource(nextLevel3Splashscreen.getDiffuseMapRV());
+				mfxSpecMapVar->SetResource(nextLevel3Splashscreen.getSpecMapRV());
+				nextLevel3Splashscreen.draw();
+			}
 
 			// Turn regular lighting back on for the rest of the scene
 			ambientOnlyFlag = 0;
